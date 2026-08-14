@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PingScore 底部 Bar 配色对比</title>
+  <style>
+    :root {
+      --bg: #eef4f8;
+      --ink: #0b0f14;
+      --muted: #697582;
+      --blue: #1f6ec7;
+      --red: #ef4f4f;
+      --purple: #7357b5;
+      --line: #d3dce4;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 28px;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+    }
+
+    h1, h2, p { margin: 0; }
+
+    .intro {
+      max-width: 1100px;
+      margin: 0 auto 24px;
+    }
+
+    h1 { font-size: 28px; margin-bottom: 8px; }
+    .intro p { color: var(--muted); line-height: 1.7; }
+
+    .gallery {
+      width: min(1100px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+    }
+
+    .variant {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .88);
+    }
+
+    .variant h2 { font-size: 18px; margin-bottom: 4px; }
+    .variant p { color: var(--muted); font-size: 13px; line-height: 1.6; }
+
+    .phone {
+      height: 420px;
+      margin-top: 14px;
+      overflow: hidden;
+      border: 8px solid #171d22;
+      border-radius: 28px;
+      background: #f8fbfd;
+      position: relative;
+    }
+
+    .screen {
+      height: 100%;
+      padding: 16px 14px 0;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(#edf5fa, #fff 62%, #eaf1f6);
+    }
+
+    .fake-top { height: 32px; display: flex; justify-content: space-between; color: #687684; font-size: 11px; }
+    .fake-title { text-align: center; font-size: 20px; font-weight: 900; }
+
+    .score-preview {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 18px 0 12px;
+    }
+
+    .score-preview > div {
+      display: grid;
+      place-items: center;
+      border: 2px solid #26323d;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 84px;
+      font-weight: 900;
+    }
+
+    .bottom-bar {
+      min-height: 72px;
+      margin: 0 -14px;
+      padding: 10px 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .bottom-bar button {
+      min-height: 50px;
+      border: 0;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .white-bar { background: #fff; border-top: 1px solid #d7e0e7; }
+    .white-bar button { background: #fff; color: #111820; }
+    .white-bar button:first-child { background: var(--purple); color: #fff; }
+    .white-bar button:last-child { color: var(--blue); }
+
+    .blue-bar { background: #e5f0f8; border-top: 1px solid #c9dce9; }
+    .blue-bar button { background: #fff; color: #111820; }
+    .blue-bar button:first-child { background: #111820; color: #fff; }
+    .blue-bar button:last-child { background: #dff7ea; color: #155f3b; }
+
+    .dark-bar { background: #202a34; border-top: 1px solid #3b4855; }
+    .dark-bar button { background: #303d49; color: #fff; }
+    .dark-bar button:first-child { background: var(--purple); color: #fff; }
+    .dark-bar button:last-child { background: var(--blue); color: #fff; }
+
+    .accent-bar { background: #fff; border-top: 1px solid #d7e0e7; }
+    .accent-bar button:first-child { background: var(--purple); color: #fff; }
+    .accent-bar button:nth-child(2) { background: var(--red); color: #fff; }
+    .accent-bar button:last-child { background: var(--blue); color: #fff; }
+
+    .neutral-bar { background: #fff; border-top: 1px solid #d7e0e7; }
+    .neutral-bar button { background: #fff; color: #111820; border: 1px solid #d3dce4; }
+    .neutral-bar button:first-child { background: #263340; color: #fff; border-color: #263340; }
+    .neutral-bar button:nth-child(2) { background: var(--red); color: #fff; border-color: var(--red); }
+    .neutral-bar button:last-child { background: #20b36b; color: #fff; border-color: #20b36b; }
+
+    .cool-bar { background: #e5f0f8; border-top: 1px solid #c9dce9; }
+    .cool-bar button { background: #fff; color: #1c2a38; }
+    .cool-bar button:first-child { background: #1f6ec7; color: #fff; }
+    .cool-bar button:nth-child(2) { background: #ef4f4f; color: #fff; }
+    .cool-bar button:last-child { background: #20b36b; color: #fff; }
+
+    .soft-green-bar { background: #eef8f2; border-top: 1px solid #c9e6d5; }
+    .soft-green-bar button { background: #fff; color: #111820; }
+    .soft-green-bar button:first-child { background: #111820; color: #fff; }
+    .soft-green-bar button:nth-child(2) { background: #ef4f4f; color: #fff; }
+    .soft-green-bar button:last-child { background: #20b36b; color: #fff; }
+
+    .dark-green-bar { background: #202a34; border-top: 1px solid #3b4855; }
+    .dark-green-bar button { background: #303d49; color: #fff; }
+    .dark-green-bar button:first-child { background: #fff; color: #202a34; }
+    .dark-green-bar button:nth-child(2) { background: #ef4f4f; color: #fff; }
+    .dark-green-bar button:last-child { background: #20b36b; color: #fff; }
+
+    .recommendation {
+      width: min(1100px, 100%);
+      margin: 24px auto 0;
+      padding: 16px 18px;
+      border-left: 4px solid var(--purple);
+      background: #fff;
+      color: #344252;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    @media (max-width: 760px) {
+      body { padding: 18px 12px; }
+      .gallery { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="intro">
+    <h1>PingScore 底部 Bar 配色对比</h1>
+    <p>当前只比较底部操作区的背景、文字和按钮颜色，主计分区域保持一致。四种方案均采用 8px 圆角。</p>
+  </header>
+
+  <main class="gallery">
+    <section class="variant">
+      <h2>方案 A：白底黑字</h2>
+      <p>最接近参考图，干净、克制，紫色只强调“设定”。</p>
+      <div class="phone"><div class="screen"><div class="fake-top"><span>19:30</span><span>78%</span></div><div class="fake-title">乒乓球计分器</div><div class="score-preview"><div>11</div><div>8</div></div><div class="bottom-bar white-bar"><button>设定</button><button>暂停</button><button>换发</button></div></div></div>
+    </section>
+
+    <section class="variant">
+      <h2>方案 B：浅蓝底</h2>
+      <p>让底部 Bar 与页面背景形成轻微区隔，整体最柔和。</p>
+      <div class="phone"><div class="screen"><div class="fake-top"><span>19:30</span><span>78%</span></div><div class="fake-title">乒乓球计分器</div><div class="score-preview"><div>11</div><div>8</div></div><div class="bottom-bar blue-bar"><button>设定</button><button>暂停</button><button>换发</button></div></div></div>
+    </section>
+
+    <section class="variant">
+      <h2>方案 C：深色底</h2>
+      <p>比赛场景对比度最高，适合球馆远距离观看。</p>
+      <div class="phone"><div class="screen"><div class="fake-top"><span>19:30</span><span>78%</span></div><div class="fake-title">乒乓球计分器</div><div class="score-preview"><div>11</div><div>8</div></div><div class="bottom-bar dark-bar"><button>设定</button><button>暂停</button><button>换发</button></div></div></div>
+    </section>
+
+    <section class="variant">
+      <h2>方案 D：红蓝操作色</h2>
+      <p>把暂停和换发做成明显操作色，识别最快，但视觉更活跃。</p>
+      <div class="phone"><div class="screen"><div class="fake-top"><span>19:30</span><span>78%</span></div><div class="fake-title">乒乓球计分器</div><div class="score-preview"><div>11</div><div>8</div></div><div class="bottom-bar accent-bar"><button>设定</button><button>暂停</button><button>换发</button></div></div></div>
+    </section>
+
+    <section class="variant">
+      <h2>方案 E：黑色设定 + 红绿操作</h2>
+      <p>去掉紫色，设定使用深色，暂停红色，换发绿色，语义最直接。</p>
+      <div class="phone"><div class="screen"><div class="fake-top"><span>19:30</span><span>78%</span></div><div class="fake-title">乒乓球计分器</div><div class="score-preview"><div>11</div><div>8</div></div><div class="bottom-bar neutral-bar"><button>设定</button><button>暂停</button><button>换发</button></div></div></div>
+    </section>
+
+    <section class="variant">
+      <h2>方案 F：蓝色设定 + 红绿操作</h2>
+      <p>设定与品牌蓝保持一致，换发改为绿色，整体更像工具型产品。</p>
+      <div class="phone"><div class="screen"><div class="fake-top"><span>19:30</span><span>78%</span></div><div class="fake-title">乒乓球计分器</div><div class="score-preview"><div>11</div><div>8</div></div><div class="bottom-bar cool-bar"><button>设定</button><button>暂停</button><button>换发</button></div></div></div>
+    </section>
+
+    <section class="variant">
+      <h2>方案 G：浅绿底 + 黑色设定</h2>
+      <p>用浅绿色强化“比赛进行中”的状态，换发绿色保持统一。</p>
+      <div class="phone"><div class="screen"><div class="fake-top"><span>19:30</span><span>78%</span></div><div class="fake-title">乒乓球计分器</div><div class="score-preview"><div>11</div><div>8</div></div><div class="bottom-bar soft-green-bar"><button>设定</button><button>暂停</button><button>换发</button></div></div></div>
+    </section>
+
+    <section class="variant">
+      <h2>方案 H：深色底 + 白色设定</h2>
+      <p>深色底适合球馆环境，设定用白色形成稳定主入口，换发使用绿色。</p>
+      <div class="phone"><div class="screen"><div class="fake-top"><span>19:30</span><span>78%</span></div><div class="fake-title">乒乓球计分器</div><div class="score-preview"><div>11</div><div>8</div></div><div class="bottom-bar dark-green-bar"><button>设定</button><button>暂停</button><button>换发</button></div></div></div>
+    </section>
+  </main>
+
+  <div class="recommendation"><strong>第二轮建议：</strong>如果确定换发使用绿色，优先比较方案 E 和方案 F：E 的操作语义最清楚，F 与品牌蓝色统一度更高。方案 H 更适合球馆远距离观看。</div>
+</body>
+</html>

@@ -1,0 +1,979 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PingScore 原型参考</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f1115;
+      --panel: #181c22;
+      --panel-2: #202630;
+      --line: #343b47;
+      --text: #f7f9fc;
+      --muted: #aeb7c5;
+      --red: #f05252;
+      --cyan: #21c7d9;
+      --green: #49d17c;
+      --yellow: #ffd166;
+      --disabled: #5b6472;
+      --shadow: 0 24px 70px rgba(0, 0, 0, .38);
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background:
+        linear-gradient(135deg, rgba(33, 199, 217, .12), transparent 32%),
+        linear-gradient(315deg, rgba(240, 82, 82, .11), transparent 38%),
+        var(--bg);
+      color: var(--text);
+    }
+
+    .page {
+      width: min(1440px, 100%);
+      margin: 0 auto;
+      padding: 32px;
+    }
+
+    .brief {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 20px;
+      align-items: stretch;
+      margin-bottom: 30px;
+    }
+
+    .brief section {
+      background: rgba(24, 28, 34, .88);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    h1, h2, h3, p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 30px;
+      letter-spacing: 0;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin-bottom: 14px;
+    }
+
+    h3 {
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    p, li {
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 10px;
+      border-radius: 6px;
+      background: #202630;
+      color: #dbe5f4;
+      border: 1px solid #3a4350;
+      font-size: 13px;
+    }
+
+    .canvas {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(280px, 1fr));
+      gap: 22px;
+      align-items: start;
+    }
+
+    .board {
+      display: grid;
+      gap: 12px;
+    }
+
+    .caption {
+      color: #dbe5f4;
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .phone {
+      position: relative;
+      overflow: hidden;
+      background: #10141a;
+      border: 10px solid #2a3039;
+      border-radius: 32px;
+      box-shadow: var(--shadow);
+      width: 360px;
+      max-width: 100%;
+      height: 760px;
+      margin: 0 auto;
+    }
+
+    .phone.landscape {
+      width: 760px;
+      height: 360px;
+      max-width: 100%;
+      border-radius: 28px;
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      background: #10141a;
+    }
+
+    .status {
+      min-height: 42px;
+      padding: 10px 16px 0;
+      display: flex;
+      justify-content: space-between;
+      color: #d8e0ea;
+      font-size: 12px;
+    }
+
+    .topbar {
+      height: 58px;
+      display: grid;
+      grid-template-columns: 48px 1fr 48px;
+      align-items: center;
+      padding: 0 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, .08);
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      border: 1px solid #3b4654;
+      background: #1b212a;
+      color: var(--text);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .round-info {
+      text-align: center;
+    }
+
+    .round-info strong {
+      display: block;
+      font-size: 18px;
+    }
+
+    .round-info span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .score-area {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 0;
+    }
+
+    .player {
+      position: relative;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 14px;
+      padding: 18px 14px 20px;
+      border-right: 1px solid rgba(255, 255, 255, .08);
+    }
+
+    .player:last-child {
+      border-right: 0;
+    }
+
+    .player.left {
+      background: linear-gradient(180deg, rgba(240, 82, 82, .2), rgba(16, 20, 26, 0));
+    }
+
+    .player.right {
+      background: linear-gradient(180deg, rgba(33, 199, 217, .2), rgba(16, 20, 26, 0));
+    }
+
+    .player-head {
+      display: grid;
+      gap: 8px;
+      justify-items: center;
+      min-height: 86px;
+    }
+
+    .name {
+      font-size: 18px;
+      font-weight: 800;
+      word-break: break-word;
+      text-align: center;
+    }
+
+    .serve {
+      min-height: 28px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 9px;
+      border-radius: 6px;
+      border: 1px solid #3b4654;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .serve.active {
+      color: #081217;
+      background: var(--yellow);
+      border-color: var(--yellow);
+      box-shadow: 0 0 0 5px rgba(255, 209, 102, .13);
+    }
+
+    .big-score {
+      align-self: center;
+      justify-self: center;
+      font-size: 104px;
+      line-height: 1;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .controls {
+      display: grid;
+      gap: 10px;
+    }
+
+    .score-btn {
+      width: 100%;
+      min-height: 68px;
+      border: 0;
+      border-radius: 8px;
+      color: white;
+      font-size: 30px;
+      font-weight: 900;
+    }
+
+    .plus-red {
+      background: var(--red);
+    }
+
+    .plus-cyan {
+      background: var(--cyan);
+      color: #061216;
+    }
+
+    .minus {
+      background: #2b333f;
+      color: #d7dfeb;
+      border: 1px solid #445061;
+    }
+
+    .pause {
+      min-height: 44px;
+      border: 1px solid #495363;
+      border-radius: 8px;
+      background: transparent;
+      color: #dbe5f4;
+      font-weight: 800;
+    }
+
+    .bottom-action {
+      height: 78px;
+      display: grid;
+      place-items: center;
+      border-top: 1px solid rgba(255, 255, 255, .08);
+      background: #151a21;
+      padding: 10px 18px;
+    }
+
+    .serve-switch {
+      min-width: 210px;
+      min-height: 48px;
+      border: 0;
+      border-radius: 8px;
+      background: #f5f7fb;
+      color: #10141a;
+      font-weight: 900;
+      font-size: 15px;
+    }
+
+    .settings-content {
+      flex: 1;
+      overflow: hidden;
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .preset {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .preset button,
+    .primary {
+      min-height: 42px;
+      border: 0;
+      border-radius: 8px;
+      font-weight: 900;
+    }
+
+    .preset .on,
+    .primary {
+      background: var(--green);
+      color: #07120c;
+    }
+
+    .preset .off {
+      background: #252c36;
+      color: #dbe5f4;
+      border: 1px solid #3b4654;
+    }
+
+    .setting-row {
+      min-height: 58px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      background: var(--panel-2);
+      border: 1px solid #323b48;
+      border-radius: 8px;
+    }
+
+    .setting-row b {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .setting-row span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .value {
+      min-width: 70px;
+      text-align: center;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: #10141a;
+      border: 1px solid #3b4654;
+      font-weight: 800;
+    }
+
+    .switch {
+      width: 50px;
+      height: 28px;
+      border-radius: 999px;
+      background: var(--green);
+      padding: 3px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .switch.off {
+      background: #566071;
+      justify-content: flex-start;
+    }
+
+    .knob {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: white;
+    }
+
+    .danger {
+      min-height: 42px;
+      border: 1px solid rgba(240, 82, 82, .7);
+      color: #ffdada;
+      background: rgba(240, 82, 82, .13);
+      border-radius: 8px;
+      font-weight: 900;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      align-items: end;
+      background: rgba(0, 0, 0, .48);
+    }
+
+    .sheet {
+      background: #171c23;
+      border-top: 1px solid #3b4654;
+      border-radius: 18px 18px 0 0;
+      padding: 18px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .choice {
+      min-height: 56px;
+      border: 1px solid #3b4654;
+      border-radius: 8px;
+      background: #222936;
+      color: white;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .pause-mask {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(16, 20, 26, .78);
+      padding: 24px;
+      text-align: center;
+    }
+
+    .pause-card,
+    .result-card {
+      width: min(300px, 100%);
+      background: #202630;
+      border: 1px solid #465263;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .timer {
+      margin: 12px auto 16px;
+      font-size: 56px;
+      font-weight: 900;
+      color: var(--yellow);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .disabled-area .score-btn,
+    .disabled-area .pause,
+    .disabled-area .serve-switch {
+      background: #323946;
+      color: var(--disabled);
+      border-color: #3d4654;
+    }
+
+    .modal-wrap {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(0, 0, 0, .58);
+      padding: 18px;
+    }
+
+    .winner {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--green);
+      margin-bottom: 6px;
+      text-align: center;
+    }
+
+    .match-score {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 10px;
+      margin: 18px 0;
+      text-align: center;
+    }
+
+    .match-score strong {
+      font-size: 54px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .sets {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .set-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      color: var(--muted);
+      font-size: 13px;
+      padding: 8px 0;
+      border-bottom: 1px solid #384251;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .secondary {
+      min-height: 42px;
+      border: 1px solid #3b4654;
+      border-radius: 8px;
+      background: #151a21;
+      color: #dbe5f4;
+      font-weight: 900;
+    }
+
+    .landscape .status {
+      min-height: 28px;
+      padding-top: 6px;
+    }
+
+    .landscape .topbar {
+      height: 46px;
+    }
+
+    .landscape .score-area {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .landscape .player {
+      grid-template-columns: 160px 1fr 150px;
+      grid-template-rows: 1fr;
+      align-items: center;
+      padding: 12px;
+    }
+
+    .landscape .player-head {
+      min-height: 0;
+      justify-items: start;
+      text-align: left;
+    }
+
+    .landscape .name {
+      text-align: left;
+    }
+
+    .landscape .big-score {
+      font-size: 92px;
+    }
+
+    .landscape .bottom-action {
+      position: absolute;
+      left: 50%;
+      bottom: 10px;
+      transform: translateX(-50%);
+      height: auto;
+      border: 0;
+      background: transparent;
+      padding: 0;
+    }
+
+    .landscape .serve-switch {
+      min-width: 170px;
+    }
+
+    @media (max-width: 1180px) {
+      .brief,
+      .canvas {
+        grid-template-columns: 1fr;
+      }
+
+      .phone.landscape {
+        width: min(760px, 100%);
+      }
+    }
+
+    @media (max-width: 460px) {
+      .page {
+        padding: 18px 12px;
+      }
+
+      .brief section {
+        padding: 16px;
+      }
+
+      .phone {
+        height: 720px;
+      }
+
+      .big-score {
+        font-size: 84px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="brief">
+      <section>
+        <h1>PingScore 乒乓球计分器原型</h1>
+        <p>基于需求文档 V1.0.0 提炼，产品核心是低误触、高可读、可快速切换规则的比赛计分工具。原型优先覆盖 P0/P1：计分、发球、设置、暂停、胜负判定和结果展示。</p>
+        <div class="tag-row">
+          <span class="tag">单手操作</span>
+          <span class="tag">高对比度</span>
+          <span class="tag">横竖屏适配</span>
+          <span class="tag">BO3/BO5/BO7</span>
+          <span class="tag">发球自动切换</span>
+        </div>
+      </section>
+      <section>
+        <h2>需求评估</h2>
+        <ul>
+          <li>主界面方向明确，最重要的分数与加减分热区应占据最大面积。</li>
+          <li>设置项较多，建议以预设优先，再允许细调，避免开赛前配置成本过高。</li>
+          <li>文档缺少撤销、换边、历史小分、长按连加等边界说明，后续实现前建议补齐。</li>
+          <li>暂停和比赛结束都是强状态，应全局锁定计分并给出醒目的视觉反馈。</li>
+        </ul>
+      </section>
+    </div>
+
+    <div class="canvas">
+      <section class="board">
+        <div class="caption">主计分界面 - 竖屏</div>
+        <div class="phone">
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn" aria-label="返回">‹</button>
+              <div class="round-info">
+                <strong>第 2 局</strong>
+                <span>BO5 · 11 分制 · 1:0</span>
+              </div>
+              <button class="icon-btn" aria-label="设置">⚙</button>
+            </div>
+            <div class="score-area">
+              <div class="player left">
+                <div class="player-head">
+                  <div class="name">玩家 A</div>
+                  <div class="serve active">发球</div>
+                </div>
+                <div class="big-score">9</div>
+                <div class="controls">
+                  <button class="score-btn plus-red">+1</button>
+                  <button class="score-btn minus">-1</button>
+                  <button class="pause">暂停</button>
+                </div>
+              </div>
+              <div class="player right">
+                <div class="player-head">
+                  <div class="name">玩家 B</div>
+                  <div class="serve">接发</div>
+                </div>
+                <div class="big-score">7</div>
+                <div class="controls">
+                  <button class="score-btn plus-cyan">+1</button>
+                  <button class="score-btn minus">-1</button>
+                  <button class="pause">暂停</button>
+                </div>
+              </div>
+            </div>
+            <div class="bottom-action">
+              <button class="serve-switch">切换发球方</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <div class="caption">赛制设置页</div>
+        <div class="phone">
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn" aria-label="返回">‹</button>
+              <div class="round-info">
+                <strong>赛制设置</strong>
+                <span>当前：正规比赛</span>
+              </div>
+              <button class="icon-btn" aria-label="保存">✓</button>
+            </div>
+            <div class="settings-content">
+              <div class="preset">
+                <button class="on">正规比赛</button>
+                <button class="off">娱乐模式</button>
+              </div>
+              <div class="setting-row">
+                <div><b>赛制选择</b><span>达到胜局后结束比赛</span></div>
+                <div class="value">BO5</div>
+              </div>
+              <div class="setting-row">
+                <div><b>单局分数</b><span>领先 2 分判胜</span></div>
+                <div class="value">11</div>
+              </div>
+              <div class="setting-row">
+                <div><b>发球规则</b><span>10 平后每 1 分换发</span></div>
+                <div class="value">每 2 分</div>
+              </div>
+              <div class="setting-row">
+                <div><b>暂停规则</b><span>每方每场 1 次，60 秒</span></div>
+                <div class="switch"><span class="knob"></span></div>
+              </div>
+              <div class="setting-row">
+                <div><b>声音反馈</b><span>加减分、局点、赛点提示</span></div>
+                <div class="switch"><span class="knob"></span></div>
+              </div>
+              <div class="setting-row">
+                <div><b>震动反馈</b><span>用于嘈杂球馆环境</span></div>
+                <div class="switch"><span class="knob"></span></div>
+              </div>
+              <button class="primary">保存为个人配置</button>
+              <button class="danger">重置当前比赛</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <div class="caption">发球选择 Sheet</div>
+        <div class="phone">
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn" aria-label="返回">‹</button>
+              <div class="round-info">
+                <strong>第 2 局</strong>
+                <span>手动指定后继续自动换发</span>
+              </div>
+              <button class="icon-btn" aria-label="设置">⚙</button>
+            </div>
+            <div class="score-area">
+              <div class="player left">
+                <div class="player-head">
+                  <div class="name">玩家 A</div>
+                  <div class="serve">接发</div>
+                </div>
+                <div class="big-score">10</div>
+                <div class="controls">
+                  <button class="score-btn plus-red">+1</button>
+                  <button class="score-btn minus">-1</button>
+                  <button class="pause">暂停</button>
+                </div>
+              </div>
+              <div class="player right">
+                <div class="player-head">
+                  <div class="name">玩家 B</div>
+                  <div class="serve active">发球</div>
+                </div>
+                <div class="big-score">10</div>
+                <div class="controls">
+                  <button class="score-btn plus-cyan">+1</button>
+                  <button class="score-btn minus">-1</button>
+                  <button class="pause">暂停</button>
+                </div>
+              </div>
+            </div>
+            <div class="bottom-action">
+              <button class="serve-switch">切换发球方</button>
+            </div>
+            <div class="overlay">
+              <div class="sheet">
+                <h3>指定当前发球方</h3>
+                <button class="choice">玩家 A 发球</button>
+                <button class="choice">玩家 B 发球</button>
+                <button class="secondary">取消</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <div class="caption">暂停状态</div>
+        <div class="phone">
+          <div class="screen disabled-area">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn" aria-label="返回">‹</button>
+              <div class="round-info">
+                <strong>第 3 局</strong>
+                <span>玩家 A 暂停中</span>
+              </div>
+              <button class="icon-btn" aria-label="设置">⚙</button>
+            </div>
+            <div class="score-area">
+              <div class="player left">
+                <div class="player-head">
+                  <div class="name">玩家 A</div>
+                  <div class="serve active">发球</div>
+                </div>
+                <div class="big-score">5</div>
+                <div class="controls">
+                  <button class="score-btn plus-red">+1</button>
+                  <button class="score-btn minus">-1</button>
+                  <button class="pause">已用暂停</button>
+                </div>
+              </div>
+              <div class="player right">
+                <div class="player-head">
+                  <div class="name">玩家 B</div>
+                  <div class="serve">接发</div>
+                </div>
+                <div class="big-score">8</div>
+                <div class="controls">
+                  <button class="score-btn plus-cyan">+1</button>
+                  <button class="score-btn minus">-1</button>
+                  <button class="pause">暂停</button>
+                </div>
+              </div>
+            </div>
+            <div class="bottom-action">
+              <button class="serve-switch">切换发球方</button>
+            </div>
+            <div class="pause-mask">
+              <div class="pause-card">
+                <h3>玩家 A 暂停</h3>
+                <p>计分已锁定</p>
+                <div class="timer">00:43</div>
+                <button class="primary">提前结束暂停</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <div class="caption">比赛结束弹窗</div>
+        <div class="phone">
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn" aria-label="返回">‹</button>
+              <div class="round-info">
+                <strong>第 4 局</strong>
+                <span>BO5 · 3:1</span>
+              </div>
+              <button class="icon-btn" aria-label="设置">⚙</button>
+            </div>
+            <div class="score-area">
+              <div class="player left">
+                <div class="player-head">
+                  <div class="name">玩家 A</div>
+                  <div class="serve active">发球</div>
+                </div>
+                <div class="big-score">11</div>
+                <div class="controls">
+                  <button class="score-btn plus-red">+1</button>
+                  <button class="score-btn minus">-1</button>
+                  <button class="pause">已用暂停</button>
+                </div>
+              </div>
+              <div class="player right">
+                <div class="player-head">
+                  <div class="name">玩家 B</div>
+                  <div class="serve">接发</div>
+                </div>
+                <div class="big-score">6</div>
+                <div class="controls">
+                  <button class="score-btn plus-cyan">+1</button>
+                  <button class="score-btn minus">-1</button>
+                  <button class="pause">暂停</button>
+                </div>
+              </div>
+            </div>
+            <div class="bottom-action">
+              <button class="serve-switch">切换发球方</button>
+            </div>
+            <div class="modal-wrap">
+              <div class="result-card">
+                <div class="winner">玩家 A 获胜</div>
+                <p style="text-align:center">BO5 比赛结束</p>
+                <div class="match-score">
+                  <div>玩家 A<br><strong>3</strong></div>
+                  <span>:</span>
+                  <div>玩家 B<br><strong>1</strong></div>
+                </div>
+                <div class="sets">
+                  <div class="set-row"><span>第 1 局</span><b>11:8</b></div>
+                  <div class="set-row"><span>第 2 局</span><b>9:11</b></div>
+                  <div class="set-row"><span>第 3 局</span><b>12:10</b></div>
+                  <div class="set-row"><span>第 4 局</span><b>11:6</b></div>
+                </div>
+                <div class="actions">
+                  <button class="secondary">再来一场</button>
+                  <button class="primary">重新开始</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <div class="caption">主计分界面 - 横屏</div>
+        <div class="phone landscape">
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn" aria-label="返回">‹</button>
+              <div class="round-info">
+                <strong>第 2 局</strong>
+                <span>BO5 · 11 分制 · 1:0</span>
+              </div>
+              <button class="icon-btn" aria-label="设置">⚙</button>
+            </div>
+            <div class="score-area">
+              <div class="player left">
+                <div class="player-head">
+                  <div class="name">玩家 A</div>
+                  <div class="serve active">发球</div>
+                </div>
+                <div class="big-score">9</div>
+                <div class="controls">
+                  <button class="score-btn plus-red">+1</button>
+                  <button class="score-btn minus">-1</button>
+                  <button class="pause">暂停</button>
+                </div>
+              </div>
+              <div class="player right">
+                <div class="player-head">
+                  <div class="name">玩家 B</div>
+                  <div class="serve">接发</div>
+                </div>
+                <div class="big-score">7</div>
+                <div class="controls">
+                  <button class="score-btn plus-cyan">+1</button>
+                  <button class="score-btn minus">-1</button>
+                  <button class="pause">暂停</button>
+                </div>
+              </div>
+            </div>
+            <div class="bottom-action">
+              <button class="serve-switch">切换发球方</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

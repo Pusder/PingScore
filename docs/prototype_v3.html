@@ -1,0 +1,2386 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PingScore V3 优先级原型</title>
+  <style>
+    :root {
+      --bg: #eef4f8;
+      --ink: #0b0f14;
+      --muted: #697582;
+      --line: #cfd8df;
+      --panel: #ffffff;
+      --panel-soft: #f6f8fa;
+      --blue: #1f6ec7;
+      --blue-dark: #1254a0;
+      --red: #ef4f4f;
+      --green: #20b36b;
+      --yellow: #ffc857;
+      --shadow: 0 22px 60px rgba(41, 55, 70, .18);
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 18% 8%, rgba(31, 110, 199, .16), transparent 30%),
+        radial-gradient(circle at 92% 18%, rgba(32, 179, 107, .12), transparent 28%),
+        var(--bg);
+    }
+
+    .page {
+      width: min(1420px, 100%);
+      margin: 0 auto;
+      padding: 30px;
+    }
+
+    .brief {
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .brief section {
+      background: rgba(255, 255, 255, .88);
+      border: 1px solid rgba(207, 216, 223, .9);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    h1, h2, h3, p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 30px;
+      margin-bottom: 10px;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    h3 {
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    p, li {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .chip {
+      min-height: 30px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 10px;
+      border: 1px solid #d3dbe3;
+      border-radius: 6px;
+      background: #fff;
+      color: #304052;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .canvas {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 26px 22px;
+      align-items: start;
+    }
+
+    .tab-nav {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      margin: 0 0 22px;
+      padding: 4px 2px 10px;
+      border-bottom: 1px solid var(--line);
+      scrollbar-width: thin;
+    }
+
+    .tab-btn {
+      flex: 0 0 auto;
+      min-height: 42px;
+      padding: 0 16px;
+      border: 1px solid #ccd7e0;
+      border-radius: 8px;
+      background: #fff;
+      color: #2d3d4c;
+      font-size: 14px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+
+    .tab-panel {
+      display: none;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 26px 22px;
+      align-items: start;
+    }
+
+    .tab-panel.active {
+      display: grid;
+    }
+
+    .canvas > .board {
+      display: none;
+    }
+
+    .canvas > .board.active {
+      display: grid;
+    }
+
+    .board {
+      display: grid;
+      gap: 12px;
+      justify-items: center;
+      padding: 22px 0 30px;
+      border-top: 1px solid rgba(207, 216, 223, .8);
+    }
+
+    .caption {
+      color: #1d2b3b;
+      font-size: 15px;
+      font-weight: 900;
+      width: min(780px, 100%);
+      display: grid;
+      gap: 5px;
+    }
+
+    .entry {
+      display: block;
+      color: #687684;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.55;
+    }
+
+    .phone {
+      width: 370px;
+      max-width: 100%;
+      height: 780px;
+      position: relative;
+      overflow: hidden;
+      margin: 0 auto;
+      border: 10px solid #161b20;
+      border-radius: 36px;
+      background: #f7fbfd;
+      box-shadow: var(--shadow);
+    }
+
+    .phone.landscape {
+      width: 780px;
+      height: 370px;
+      border-radius: 30px;
+    }
+
+    .notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      z-index: 4;
+      width: 150px;
+      height: 28px;
+      transform: translateX(-50%);
+      background: #111;
+      border-radius: 0 0 18px 18px;
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      background:
+        linear-gradient(180deg, rgba(238, 246, 251, .98), rgba(255, 255, 255, .94) 48%, #eef4f8);
+    }
+
+    .status {
+      min-height: 42px;
+      padding: 12px 18px 0;
+      display: flex;
+      justify-content: space-between;
+      color: #192430;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .topbar {
+      height: 58px;
+      display: grid;
+      grid-template-columns: 48px 1fr 48px;
+      align-items: center;
+      padding: 0 14px;
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      border: 0;
+      border-radius: 8px;
+      background: #263340;
+      color: #fff;
+      font-size: 24px;
+      font-weight: 900;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 6px 14px rgba(38, 51, 64, .18);
+    }
+
+    .history-icon {
+      display: grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+    }
+
+    .history-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+
+    .back {
+      background: transparent;
+      color: #12191f;
+      box-shadow: none;
+      font-size: 42px;
+      line-height: 1;
+    }
+
+    .title {
+      text-align: center;
+      font-size: 25px;
+      font-weight: 900;
+    }
+
+    .match-strip {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 14px 18px 10px;
+      align-items: center;
+    }
+
+    .start-btn {
+      min-height: 58px;
+      border: 0;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #2878d2, #155cae);
+      color: white;
+      font-size: 22px;
+      font-weight: 900;
+      box-shadow: 0 10px 22px rgba(31, 110, 199, .24);
+    }
+
+    .round-pill {
+      min-height: 58px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: rgba(226, 231, 236, .85);
+      color: #101820;
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .round-pill span {
+      font-size: 14px;
+      color: #5f6d7a;
+      margin-left: 4px;
+    }
+
+    .sets-bar {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 18px 12px;
+    }
+
+    .set-dot {
+      min-width: 54px;
+      min-height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 6px;
+      background: #fff;
+      border: 1px solid #d5dde5;
+      color: #344252;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .set-dot.win {
+      color: #08361f;
+      background: #dff7ea;
+      border-color: #9fe5be;
+    }
+
+    .score-zone {
+      flex: 1;
+      min-height: 0;
+      padding: 8px 14px 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .player {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .player-name {
+      min-height: 44px;
+      display: grid;
+      place-items: center;
+      font-size: 26px;
+      font-weight: 900;
+      word-break: break-word;
+      text-align: center;
+    }
+
+    .serve-badge {
+      min-height: 34px;
+      display: inline-grid;
+      justify-self: center;
+      place-items: center;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 2px solid #d4dce5;
+      background: #fff;
+      color: #7a8795;
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .serve-badge.active {
+      color: #10240d;
+      border-color: #86d178;
+      background: #dff8d9;
+      box-shadow: 0 0 0 6px rgba(32, 179, 107, .14);
+    }
+
+    .score-card {
+      min-height: 218px;
+      position: relative;
+      display: grid;
+      place-items: center;
+      border: 2px solid #26323d;
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, #fff 0 49%, #dfe6ec 49% 51%, #fff 51% 100%);
+      overflow: hidden;
+      box-shadow: 0 12px 24px rgba(40, 52, 64, .13);
+    }
+
+    .score-card::before,
+    .score-card::after {
+      content: "";
+      position: absolute;
+      top: 48%;
+      width: 8px;
+      height: 36px;
+      border-radius: 3px;
+      background: #26323d;
+    }
+
+    .score-card::before {
+      left: -2px;
+    }
+
+    .score-card::after {
+      right: -2px;
+    }
+
+    .score {
+      font-size: 118px;
+      line-height: 1;
+      color: #020609;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0;
+      z-index: 1;
+    }
+
+    .big-actions {
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      gap: 10px;
+      min-height: 150px;
+    }
+
+    .tap-btn {
+      border: 0;
+      border-radius: 8px;
+      font-size: 28px;
+      font-weight: 900;
+      color: white;
+      box-shadow: 0 8px 18px rgba(30, 42, 54, .13);
+    }
+
+    .tap-btn.plus {
+      background: linear-gradient(180deg, #252f3b, #111820);
+    }
+
+    .tap-btn.minus {
+      background: #e8edf2;
+      color: #27313b;
+      border: 1px solid #cfd8df;
+    }
+
+    .tap-btn.red {
+      background: linear-gradient(180deg, #fb6868, #d83c3c);
+    }
+
+    .tap-btn.blue {
+      background: linear-gradient(180deg, #3491e8, #1667ba);
+    }
+
+    .bottom-nav {
+      min-height: 92px;
+      padding: 14px 18px 18px;
+      display: grid;
+      grid-template-columns: 1fr 1.35fr 1fr;
+      gap: 12px;
+      background: rgba(234, 241, 246, .86);
+      border-top: 1px solid rgba(207, 216, 223, .8);
+    }
+
+    .bottom-nav button {
+      min-height: 58px;
+      border: 0;
+      border-radius: 8px;
+      background: #fff;
+      color: #0c1116;
+      font-size: 21px;
+      font-weight: 900;
+      box-shadow: 0 8px 18px rgba(40, 52, 64, .08);
+    }
+
+    .bottom-nav .pause-btn {
+      background: #fff;
+      font-size: 25px;
+    }
+
+    .bottom-nav .serve-btn {
+      color: #173b22;
+    }
+
+    .settings-list {
+      flex: 1;
+      padding: 14px 18px 18px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .preset {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .preset button,
+    .primary,
+    .danger {
+      min-height: 48px;
+      border-radius: 8px;
+      border: 0;
+      font-weight: 900;
+      font-size: 16px;
+    }
+
+    .preset .on,
+    .primary {
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .preset .off {
+      background: #fff;
+      color: #243341;
+      border: 1px solid #d3dce4;
+    }
+
+    .setting-row {
+      min-height: 62px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid #d3dce4;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .setting-row b {
+      display: block;
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+
+    .setting-row span {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .value {
+      min-width: 72px;
+      min-height: 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 6px;
+      background: #eef4f8;
+      border: 1px solid #d1dbe4;
+      font-weight: 900;
+      color: #16212c;
+    }
+
+    .rule-note {
+      margin-left: 5px;
+      color: inherit;
+      font-size: 13px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .switch {
+      width: 52px;
+      height: 30px;
+      border-radius: 999px;
+      padding: 3px;
+      display: flex;
+      justify-content: flex-end;
+      background: var(--green);
+    }
+
+    .switch.off {
+      justify-content: flex-start;
+      background: #a8b3bf;
+    }
+
+    .knob {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, .15);
+    }
+
+    .danger {
+      background: #fff1f1;
+      color: #ba2e2e;
+      border: 1px solid #f1b7b7;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 30;
+      display: grid;
+      align-items: end;
+      background: rgba(12, 18, 24, .38);
+    }
+
+    .sheet {
+      position: relative;
+      z-index: 31;
+      padding: 18px;
+      display: grid;
+      gap: 10px;
+      border-radius: 18px 18px 0 0;
+      background: #fff;
+      border-top: 1px solid #d4dde5;
+      box-shadow: 0 -18px 40px rgba(25, 37, 49, .18);
+    }
+
+    .choice {
+      min-height: 62px;
+      border: 0;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .choice.a {
+      background: #252f3b;
+    }
+
+    .choice.b {
+      background: var(--blue);
+    }
+
+    .pause-choice {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 18px 18px;
+      border-radius: 18px 18px 0 0;
+      background: #fff;
+      border-top: 1px solid #d4dde5;
+      box-shadow: 0 -18px 40px rgba(25, 37, 49, .18);
+    }
+
+    .pause-side {
+      display: grid;
+      gap: 8px;
+    }
+
+    .pause-side.left {
+      text-align: right;
+    }
+
+    .pause-side.right {
+      text-align: left;
+    }
+
+    .pause-side .pause-score {
+      color: #263340;
+      font-size: 24px;
+      font-weight: 900;
+    }
+
+    .pause-side small {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .pause-dots {
+      display: flex;
+      gap: 5px;
+    }
+
+    .pause-side.left .pause-dots {
+      justify-content: flex-end;
+    }
+
+    .pause-dot {
+      width: 9px;
+      height: 9px;
+      border: 2px solid #687684;
+      border-radius: 50%;
+      background: #fff;
+    }
+
+    .pause-dot.used {
+      background: #687684;
+    }
+
+    .pause-choice .choice {
+      min-height: 52px;
+      font-size: 15px;
+    }
+
+    .pause-center {
+      display: grid;
+      justify-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .secondary {
+      min-height: 48px;
+      border-radius: 8px;
+      border: 1px solid #d3dce4;
+      background: #f6f8fa;
+      color: #263340;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .locked .tap-btn,
+    .locked .bottom-nav button {
+      background: #dbe2e8;
+      color: #99a5b1;
+      border: 1px solid #c8d2dc;
+      box-shadow: none;
+    }
+
+    .pause-mask {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(238, 244, 248, .9);
+      text-align: center;
+    }
+
+    .pause-card,
+    .result-card {
+      position: relative;
+      z-index: 1;
+      width: min(310px, 100%);
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #d2dce5;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .state-screen .score-zone {
+      flex: 0 0 auto;
+      min-height: auto;
+      padding-bottom: 10px;
+    }
+
+    .state-screen .player {
+      grid-template-rows: auto auto auto auto;
+    }
+
+    .state-screen .score-card {
+      min-height: 150px;
+    }
+
+    .state-screen .score {
+      font-size: 84px;
+    }
+
+    .state-screen .big-actions {
+      min-height: 106px;
+    }
+
+    .state-screen .tap-btn {
+      font-size: 22px;
+    }
+
+    .state-screen .bottom-nav {
+      min-height: 78px;
+      padding-top: 10px;
+      padding-bottom: 12px;
+    }
+
+    .state-screen .bottom-nav button {
+      min-height: 50px;
+      font-size: 18px;
+    }
+
+    .result-screen .score-zone {
+      opacity: .22;
+      transform: scale(.96);
+      transform-origin: top center;
+    }
+
+    .timer {
+      margin: 12px auto 16px;
+      font-size: 58px;
+      line-height: 1;
+      font-weight: 900;
+      color: var(--blue);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .modal-wrap {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      align-items: center;
+      justify-items: center;
+      padding: 18px;
+      background: rgba(12, 18, 24, .42);
+    }
+
+    .modal-wrap .result-card {
+      margin-bottom: 0;
+    }
+
+    .result-screen .result-card {
+      width: min(330px, calc(100% - 24px));
+      padding: 16px;
+    }
+
+    .result-screen .winner {
+      font-size: 24px;
+    }
+
+    .result-screen .match-score {
+      margin: 12px 0;
+    }
+
+    .result-screen .match-score strong {
+      font-size: 44px;
+    }
+
+    .result-screen .sets {
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .result-screen .set-row {
+      padding: 5px 0;
+    }
+
+    .winner {
+      text-align: center;
+      color: var(--green);
+      font-size: 28px;
+      font-weight: 900;
+      margin-bottom: 6px;
+    }
+
+    .match-score {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 10px;
+      align-items: center;
+      margin: 16px 0;
+      text-align: center;
+    }
+
+    .match-score strong {
+      display: block;
+      font-size: 56px;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .match-score .final-winner {
+      color: #d83b3b;
+    }
+
+    .match-score .final-loser {
+      color: #9aa5af;
+    }
+
+    .sets {
+      display: grid;
+      gap: 7px;
+      margin-bottom: 16px;
+    }
+
+    .set-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      align-items: center;
+      border-bottom: 1px solid #e0e7ee;
+      padding: 7px 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .set-row b {
+      color: #1f6ec7;
+    }
+
+    .set-row .set-winner {
+      color: #d83b3b;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .set-row .set-loser {
+      color: #9aa5af;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+
+    .landscape .notch {
+      display: none;
+    }
+
+    .landscape .status {
+      min-height: 28px;
+      padding-top: 6px;
+    }
+
+    .landscape .topbar {
+      height: 44px;
+    }
+
+    .landscape .match-strip {
+      grid-template-columns: 150px 1fr;
+      padding: 2px 72px 4px;
+      gap: 10px;
+    }
+
+    .landscape .start-btn,
+    .landscape .round-pill {
+      min-height: 40px;
+      font-size: 16px;
+    }
+
+    .landscape .sets-bar {
+      display: none;
+    }
+
+    .landscape .score-zone {
+      flex: 1;
+      min-height: 0;
+      padding: 0 12px 60px;
+      gap: 10px;
+    }
+
+    .landscape .player {
+      grid-template-columns: 106px minmax(124px, 1fr) 92px;
+      grid-template-rows: 1fr;
+      align-items: center;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .landscape .player-name {
+      justify-items: start;
+      text-align: left;
+      font-size: 20px;
+      min-height: 36px;
+    }
+
+    .landscape .serve-badge {
+      justify-self: start;
+      margin-top: 6px;
+      min-height: 30px;
+      font-size: 12px;
+      padding: 0 9px;
+    }
+
+    .landscape .score-card {
+      min-height: 0;
+      height: 132px;
+    }
+
+    .landscape .score {
+      font-size: 78px;
+    }
+
+    .landscape .big-actions {
+      min-height: 0;
+      height: 132px;
+      gap: 8px;
+    }
+
+    .landscape .tap-btn {
+      font-size: 22px;
+    }
+
+    .landscape .bottom-nav {
+      position: absolute;
+      left: 50%;
+      bottom: 12px;
+      z-index: 3;
+      width: 340px;
+      min-height: 50px;
+      transform: translateX(-50%);
+      grid-template-columns: 1fr 1fr 1fr;
+      padding: 0;
+      background: transparent;
+      border: 0;
+    }
+
+    .landscape .bottom-nav button {
+      min-height: 44px;
+      font-size: 15px;
+    }
+
+    .compact-demo .score-zone {
+      flex: 0 0 auto;
+      min-height: auto;
+      padding-bottom: 10px;
+    }
+
+    .compact-demo .player {
+      grid-template-rows: auto auto auto auto;
+    }
+
+    .compact-demo .score-card {
+      min-height: 150px;
+    }
+
+    .compact-demo .score {
+      font-size: 84px;
+    }
+
+    .compact-demo .big-actions {
+      min-height: 106px;
+    }
+
+    .compact-demo .tap-btn {
+      font-size: 22px;
+    }
+
+    .form-card {
+      width: min(320px, calc(100% - 24px));
+      padding: 18px;
+      border-radius: 8px;
+      border: 1px solid #d2dce5;
+      background: #fff;
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 13px;
+      font-weight: 900;
+      color: #334150;
+    }
+
+    .input {
+      min-height: 48px;
+      border: 1px solid #cfd8df;
+      border-radius: 8px;
+      background: #f8fafc;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      color: #111820;
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .hint-box {
+      padding: 12px;
+      border-radius: 8px;
+      background: #eef6ff;
+      border: 1px solid #c9e0f8;
+      color: #38526c;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .confirmation {
+      width: min(320px, calc(100% - 24px));
+      padding: 18px;
+      border-radius: 8px;
+      background: #fff;
+      border: 1px solid #d2dce5;
+      box-shadow: var(--shadow);
+      text-align: center;
+      display: grid;
+      gap: 12px;
+    }
+
+    .confirmation .mark {
+      width: 54px;
+      height: 54px;
+      margin: 0 auto;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #dff7ea;
+      color: #0a693b;
+      font-size: 30px;
+      font-weight: 900;
+    }
+
+    .confirmation.danger-confirm .mark {
+      background: #fff1f1;
+      color: #ba2e2e;
+    }
+
+    .summary-lines {
+      display: grid;
+      gap: 8px;
+      padding: 8px 0;
+    }
+
+    .summary-line {
+      min-height: 34px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      border-bottom: 1px solid #e2e9ef;
+      color: #5d6a77;
+      font-size: 13px;
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: thin;
+    }
+
+    .mode-tabs .mode-tab {
+      flex: 0 0 88px;
+    }
+
+    .mode-tab {
+      min-height: 44px;
+      border-radius: 8px;
+      border: 1px solid #d3dce4;
+      background: #fff;
+      color: #263340;
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .mode-tab.on {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+
+    .mode-tab:disabled,
+    .option-chip.disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .option-group {
+      display: grid;
+      gap: 8px;
+    }
+
+    .option-label {
+      font-size: 13px;
+      font-weight: 900;
+      color: #263340;
+    }
+
+    .option-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .option-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 2px 2px 8px;
+      scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .option-scroll .option-chip {
+      flex: 0 0 82px;
+    }
+
+    .option-chip {
+      min-height: 40px;
+      border: 1px solid #d3dce4;
+      border-radius: 8px;
+      background: #fff;
+      color: #263340;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .option-chip.selected {
+      background: #e4f1ff;
+      border-color: var(--blue);
+      color: var(--blue);
+    }
+
+    .record-type {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #eef4f8;
+      color: #526273;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .player-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .player-item {
+      min-height: 46px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 10px;
+      border: 1px solid #d3dce4;
+      border-radius: 8px;
+      background: #fff;
+      font-weight: 900;
+    }
+
+    .avatar {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #e8f1fb;
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .small-value {
+      color: #6c7986;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .pk-grid {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #d3dce4;
+      background: #fff;
+      text-align: center;
+    }
+
+    .pk-name {
+      min-height: 58px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: #eef4f8;
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .vs {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--red);
+    }
+
+    @media (max-width: 1180px) {
+      .brief {
+        grid-template-columns: 1fr;
+      }
+
+      .phone.landscape {
+        width: min(780px, 100%);
+      }
+    }
+
+    @media (max-width: 820px) {
+      .tab-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 460px) {
+      .page {
+        padding: 18px 12px;
+      }
+
+      .phone {
+        height: 740px;
+      }
+
+      .score {
+        font-size: 96px;
+      }
+
+      .player-name {
+        font-size: 22px;
+      }
+
+      .tap-btn {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="brief">
+      <section>
+        <h1>PingScore V3：按开发优先级查看原型</h1>
+        <p>本版将现有页面按 P0、P1、P2 三个开发阶段分组展示，保留翻牌式比分、大按钮和多赛制扩展能力，便于评审每个阶段的示意页面。</p>
+        <div class="chips">
+          <span class="chip">P0 正规赛</span>
+          <span class="chip">P0 车轮赛</span>
+          <span class="chip">P1 娱乐赛</span>
+          <span class="chip">P2 双打</span>
+          <span class="chip">P2 团队赛</span>
+        </div>
+      </section>
+      <section>
+        <h2>版本评审方式</h2>
+        <ul>
+          <li>P0：先验证正规赛和车轮赛的核心计分闭环。</li>
+          <li>P1：补充娱乐赛、历史记录和全局设置。</li>
+          <li>P2：扩展双打和团队赛，验证复杂赛制信息承载。</li>
+          <li>每个页签内部宽屏最多展示两个页面，窄屏自动单列。</li>
+        </ul>
+      </section>
+      <section>
+        <h2>双打规则说明</h2>
+        <ul>
+          <li>双打模式为两队各 2 名选手，比分按队伍累计，默认 11 分制，10:10 后需领先 2 分。</li>
+          <li>每次换发后：上一回合接发者转为发球者，上一回合发球者的搭档转为接发者。</li>
+          <li>一方发球时，发球者和接发者须按本局确定的对角线顺序站位；之后双方队员按固定顺序交替击球。</li>
+          <li>每局开始重新确认首发球员与首位接发球员；下一局由上一局首发球方先接发。</li>
+          <li>决胜局先有一方达到 5 分时交换场地，并按规则调整接发顺序。</li>
+        </ul>
+      </section>
+    </div>
+    <nav class="tab-nav" aria-label="开发阶段原型分组">
+      <button class="tab-btn active" data-tab="p0">P0 · 核心版本</button>
+      <button class="tab-btn" data-tab="p1">P1 · 完整体验</button>
+      <button class="tab-btn" data-tab="p2">P2 · 扩展能力</button>
+    </nav>
+    <div class="canvas">
+      <section class="board" data-tab="p0">
+        <div class="caption">主计分 - 竖屏<span class="entry">入口：打开 App 默认进入；也可从历史记录选择“继续比赛”返回。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="历史记录"><span class="history-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3a9 9 0 1 0 8.94 10h-2.02A7 7 0 1 1 13 5c1.93 0 3.68.79 4.95 2.05L15 10h6V4l-1.65 1.65A8.96 8.96 0 0 0 13 3zm-1 5v5l4 2.4 1-1.64-3-1.76V8h-2z"/></svg></span></button>
+              <div class="title">乒乓球计分器</div>
+              <button class="icon-btn" aria-label="全局设置">⚙</button>
+            </div>
+            <div class="match-strip">
+              <button class="start-btn">开始比赛</button>
+              <div class="round-pill">当前局数：1/3</div>
+            </div>
+            <div class="hint-box" style="margin: 0 18px 8px">开始比赛：创建新比赛并清空当前临时比分；继续比赛：恢复未结束比赛的比分、局数、发球方和暂停状态。</div>
+            <div class="sets-bar">
+              <div class="set-dot win">11:8</div>
+              <div class="set-dot">9:6</div>
+              <div class="set-dot">待赛</div>
+            </div>
+            <div class="score-zone">
+              <div class="player">
+                <div class="player-name">玩家 1</div>
+                <div class="serve-badge active">● 当前发球</div>
+                <div class="score-card"><div class="score">11</div></div>
+                <div class="big-actions">
+                  <button class="tap-btn plus red">+1</button>
+                  <button class="tap-btn minus">-1</button>
+                </div>
+              </div>
+              <div class="player">
+                <div class="player-name">玩家 2</div>
+                <div class="serve-badge">接发</div>
+                <div class="score-card"><div class="score">8</div></div>
+                <div class="big-actions">
+                  <button class="tap-btn plus blue">+1</button>
+                  <button class="tap-btn minus">-1</button>
+                </div>
+              </div>
+            </div>
+            <div class="bottom-nav">
+              <button>设定</button>
+              <button class="pause-btn">暂停</button>
+              <button class="serve-btn">换发</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p0">
+        <div class="caption">赛制设置<span class="entry">入口：主计分页底部点击“设定”，用于配置本场比赛规则。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="返回">‹</button>
+              <div class="title">赛制设置</div>
+              <button class="icon-btn" aria-label="保存">✓</button>
+            </div>
+            <div class="settings-list">
+              <div class="mode-tabs">
+                <button class="mode-tab on">正规</button>
+                <button class="mode-tab">娱乐</button>
+                <button class="mode-tab">车轮赛</button>
+                <button class="mode-tab">双打</button>
+                <button class="mode-tab">团队赛</button>
+              </div>
+              <div class="hint-box">当前为正规模式：可选择 BO3、BO5 或 BO7，默认 BO3；单局分数和换发规则按乒乓球标准固定。切换到娱乐模式后，规则可自由设定。</div>
+              <div class="setting-row">
+                <div><b>赛制选择</b><span>正规模式可选择三局、五局或七局两胜</span></div>
+                <div class="value">BO3</div>
+              </div>
+              <div class="setting-row">
+                <div><b>单局分数</b></div>
+                <div class="value">11 分</div>
+              </div>
+              <div class="setting-row">
+                <div><b>发球规则</b></div>
+                <div class="value">每 2 分 <span class="rule-note">更换发球方</span></div>
+              </div>
+              <div class="option-group">
+                <div class="option-label">正规模式赛制（可选）</div>
+                <div class="option-scroll">
+                  <button class="option-chip selected">BO3</button>
+                  <button class="option-chip">BO5</button>
+                  <button class="option-chip">BO7</button>
+                </div>
+                <div class="option-label">正规模式固定规则</div>
+                <div class="option-grid">
+                  <button class="option-chip selected disabled" disabled>11 分</button>
+                  <button class="option-chip selected disabled" disabled>每 2 分换发</button>
+                </div>
+              </div>
+              <div class="setting-row">
+                <div><b>暂停规则</b><span>每方每场 1 次，60 秒</span></div>
+                <div class="switch"><span class="knob"></span></div>
+              </div>
+              <div class="setting-row">
+                <div><b>声音反馈</b><span>加分、局点、赛点提示</span></div>
+                <div class="switch"><span class="knob"></span></div>
+              </div>
+              <div class="setting-row">
+                <div><b>震动反馈</b><span>触感确认，降低漏记</span></div>
+                <div class="switch off"><span class="knob"></span></div>
+              </div>
+              <button class="primary">保存配置</button>
+              <button class="danger">重置比赛</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p1">
+        <div class="caption">娱乐模式设置<span class="entry">入口：赛制设置页点击“娱乐”；本页展示娱乐模式可修改的规则。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="返回">‹</button>
+              <div class="title">娱乐模式</div>
+              <button class="icon-btn" aria-label="保存">✓</button>
+            </div>
+            <div class="settings-list">
+              <div class="hint-box">娱乐模式不锁定规则，可按现场玩法自由设定。可选值：BO1 / BO3 / BO5 / BO7；11 分 / 21 分；每 1 分 / 每 2 分 / 每 5 分换发。达到目标分后仍需领先 2 分。</div>
+              <div class="option-group">
+                <div class="option-label">赛制选择</div>
+                <div class="option-grid">
+                  <button class="option-chip">BO1</button>
+                  <button class="option-chip selected">BO3</button>
+                  <button class="option-chip">BO5</button>
+                  <button class="option-chip">BO7</button>
+                </div>
+              </div>
+              <div class="option-group">
+                <div class="option-label">单局分数</div>
+                <div class="option-grid">
+                  <button class="option-chip selected">11 分</button>
+                  <button class="option-chip">21 分</button>
+                </div>
+              </div>
+              <div class="option-group">
+                <div class="option-label">换发频率</div>
+                <div class="option-grid">
+                  <button class="option-chip">每 1 分</button>
+                  <button class="option-chip selected">每 2 分</button>
+                  <button class="option-chip">每 5 分</button>
+                </div>
+              </div>
+              <div class="hint-box">说明：上方小字只解释当前模式规则；正规模式可选 BO3 / BO5 / BO7，但单局分数和换发规则固定；娱乐模式可保留 BO1、21 分等娱乐选项并自由调整。</div>
+              <button class="primary">保存本场规则</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p2">
+        <div class="caption">双打模式设置<span class="entry">入口：赛制设置页点击“双打”；用于两队各 2 名选手的正规双打比赛。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="返回">‹</button>
+              <div class="title">双打模式</div>
+              <button class="icon-btn" aria-label="保存">✓</button>
+            </div>
+            <div class="settings-list">
+              <div class="hint-box">双打比分按队伍累计；发球方、接发方和队员击球顺序按本局固定轮转，不提供单打式的“只切换发球方”操作。</div>
+              <div class="setting-row"><div><b>队伍 A</b><span>王强 / 陈宇</span></div><div class="value">A 队</div></div>
+              <div class="setting-row"><div><b>队伍 B</b><span>李娜 / 赵敏</span></div><div class="value">B 队</div></div>
+              <div class="setting-row"><div><b>赛制</b><span>BO3 就是三局两胜制，以此类推；双打支持 BO3 / BO5 / BO7</span></div><div class="value">BO3</div></div>
+              <div class="setting-row"><div><b>发球与接发</b></div><div class="value">每 2 分 <span class="rule-note">更换发球方</span></div></div>
+              <div class="hint-box">规则文本：每次换发后，上一回合接发者成为发球者，上一回合发球者的搭档成为接发者；发球后双方队员按固定顺序交替击球。决胜局先到 5 分时交换场地并调整接发顺序。</div>
+              <button class="primary">确认双打配置</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p2">
+        <div class="caption">双打主计分<span class="entry">入口：双打模式设置点击“确认双打配置”后进入；按队伍计分并显示当前发球/接发轮转。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="历史记录"><span class="history-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3a9 9 0 1 0 8.94 10h-2.02A7 7 0 1 1 13 5c1.93 0 3.68.79 4.95 2.05L15 10h6V4l-1.65 1.65A8.96 8.96 0 0 0 13 3zm-1 5v5l4 2.4 1-1.64-3-1.76V8h-2z"/></svg></span></button>
+              <div class="title">双打计分</div>
+              <button class="icon-btn" aria-label="全局设置">⚙</button>
+            </div>
+            <div class="match-strip">
+              <button class="start-btn">比赛中</button>
+              <div class="round-pill">当前局数：1/3</div>
+            </div>
+            <div class="sets-bar">
+              <div class="set-dot win">11:8</div>
+              <div class="set-dot">待赛</div>
+              <div class="set-dot">待赛</div>
+            </div>
+            <div class="score-zone">
+              <div class="player">
+                <div class="player-name">A 队<br><small>王强 / 陈宇</small></div>
+                <div class="serve-badge active">王强发球 · 李娜接发</div>
+                <div class="score-card"><div class="score">6</div></div>
+                <div class="big-actions"><button class="tap-btn plus red">+1</button><button class="tap-btn minus">-1</button></div>
+              </div>
+              <div class="player">
+                <div class="player-name">B 队<br><small>李娜 / 赵敏</small></div>
+                <div class="serve-badge">接发轮转中</div>
+                <div class="score-card"><div class="score">4</div></div>
+                <div class="big-actions"><button class="tap-btn plus blue">+1</button><button class="tap-btn minus">-1</button></div>
+              </div>
+            </div>
+            <div class="bottom-nav"><button>设定</button><button class="pause-btn">暂停</button><button class="serve-btn">换发</button></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p1">
+        <div class="caption">历史记录<span class="entry">入口：主计分页左上角历史记录图标；展示所有已保存和未结束比赛。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="返回">‹</button>
+              <div class="title">历史记录</div>
+              <button class="icon-btn" aria-label="全局设置">⚙</button>
+            </div>
+            <div class="settings-list">
+              <div class="setting-row">
+                <div><b>王强 vs 李娜 <span class="record-type">正规比赛</span></b><span>今天 19:02 · BO3 · 已结束</span></div>
+                <div class="value">2:1</div>
+              </div>
+              <div class="setting-row">
+                <div><b>陈宇 vs 赵敏 <span class="record-type">娱乐模式</span></b><span>今天 18:26 · BO1 · 已结束</span></div>
+                <div class="value">11:8</div>
+              </div>
+              <div class="setting-row">
+                <div><b>车轮赛第 3 场 <span class="record-type">车轮赛</span></b><span>今天 17:48 · 王强 vs 赵敏 · BO1</span></div>
+                <div class="value">继续</div>
+              </div>
+              <div class="hint-box">点击任意记录进入比赛详情；普通比赛、娱乐模式和车轮赛采用不同的记录展示。</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p1">
+        <div class="caption">比赛详情 - 普通 / 娱乐<span class="entry">入口：历史记录点击普通比赛或娱乐模式记录；展示该场所有小局比分。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="返回">‹</button>
+              <div class="title">比赛详情</div>
+              <button class="icon-btn" aria-label="全局设置">⚙</button>
+            </div>
+            <div class="settings-list">
+              <div class="hint-box">正规比赛和娱乐模式按“第几局 + 局比分”展示，便于复盘每局得分。</div>
+              <div class="setting-row"><div><b>王强 vs 李娜 <span class="record-type">正规 BO3</span></b><span>比赛结果：王强 2:1 获胜</span></div><div class="value">已结束</div></div>
+              <div class="setting-row"><div><b>第 1 局</b><span>11:8 · 王强获胜</span></div><div class="value">11:8</div></div>
+              <div class="setting-row"><div><b>第 2 局</b><span>9:11 · 李娜获胜</span></div><div class="value">9:11</div></div>
+              <div class="setting-row"><div><b>第 3 局</b><span>11:6 · 王强获胜</span></div><div class="value">11:6</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p1">
+        <div class="caption">比赛详情 - 车轮赛<span class="entry">入口：历史记录点击车轮赛记录；按每一场 PK 单独展示对手和结果。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="返回">‹</button>
+              <div class="title">车轮赛记录</div>
+              <button class="icon-btn" aria-label="全局设置">⚙</button>
+            </div>
+            <div class="settings-list">
+              <div class="hint-box">车轮赛按“第几场 PK + 两位选手 + 单局比分”展示，不合并成固定赛程，也不要求每人打相同场次。</div>
+              <div class="setting-row"><div><b>第 1 场 · 王强 vs 李娜 <span class="record-type">BO1</span></b><span>王强获胜 · 11:8</span></div><div class="value">1:0</div></div>
+              <div class="setting-row"><div><b>第 2 场 · 陈宇 vs 赵敏 <span class="record-type">BO1</span></b><span>赵敏获胜 · 11:9</span></div><div class="value">0:1</div></div>
+              <div class="setting-row"><div><b>第 3 场 · 王强 vs 赵敏 <span class="record-type">BO1</span></b><span>比赛中 · 可继续</span></div><div class="value">继续</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p0">
+        <div class="caption">继续比赛<span class="entry">入口：打开 App 检测到未结束比赛，或历史记录点击“继续”；恢复原比赛状态。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen state-screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="历史记录"><span class="history-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3a9 9 0 1 0 8.94 10h-2.02A7 7 0 1 1 13 5c1.93 0 3.68.79 4.95 2.05L15 10h6V4l-1.65 1.65A8.96 8.96 0 0 0 13 3zm-1 5v5l4 2.4 1-1.64-3-1.76V8h-2z"/></svg></span></button>
+              <div class="title">继续比赛</div>
+              <button class="icon-btn" aria-label="全局设置">⚙</button>
+            </div>
+            <div class="settings-list">
+              <div class="hint-box">继续比赛会保留当前比分、局数、发球方、比赛类型和暂停次数；点击“开始比赛”则创建新比赛并清空当前临时比分。</div>
+              <div class="setting-row"><div><b>王强 vs 李娜 <span class="record-type">正规 BO3</span></b><span>第 2 局 · 当前比分 9:8 · 玩家 2 发球</span></div><div class="value">未结束</div></div>
+              <button class="primary">继续这场比赛</button>
+              <button class="danger">开始新比赛</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p1">
+        <div class="caption">全局设置<span class="entry">入口：主计分页右上角齿轮；负责跨比赛生效的偏好和配置。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="返回">‹</button>
+              <div class="title">全局设置</div>
+              <button class="icon-btn" aria-label="保存">✓</button>
+            </div>
+            <div class="settings-list">
+              <div class="setting-row">
+                <div><b>撤销加减分提示</b><span>任意 +1 或 -1 后短暂显示撤销入口</span></div>
+                <div class="switch"><span class="knob"></span></div>
+              </div>
+              <div class="setting-row">
+                <div><b>声音反馈</b><span>加分、局点和比赛结束提示</span></div>
+                <div class="switch"><span class="knob"></span></div>
+              </div>
+              <div class="setting-row">
+                <div><b>震动反馈</b><span>触感确认，降低漏记</span></div>
+                <div class="switch off"><span class="knob"></span></div>
+              </div>
+              <div class="setting-row">
+                <div><b>默认进入方式</b><span>打开应用时恢复未结束比赛</span></div>
+                <div class="value">继续比赛</div>
+              </div>
+              <button class="primary">保存全局设置</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p0">
+        <div class="caption">发球选择<span class="entry">入口：主计分页底部点击“换发”，弹出手动指定发球方。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="返回">‹</button>
+              <div class="title">乒乓球计分器</div>
+              <button class="icon-btn" aria-label="全局设置">⚙</button>
+            </div>
+            <div class="match-strip">
+              <button class="start-btn">比赛中</button>
+              <div class="round-pill">当前局数：2/5</div>
+            </div>
+            <div class="sets-bar">
+              <div class="set-dot win">11:7</div>
+              <div class="set-dot">10:10</div>
+              <div class="set-dot">待赛</div>
+            </div>
+            <div class="score-zone">
+              <div class="player">
+                <div class="player-name">玩家 1</div>
+                <div class="serve-badge">接发</div>
+                <div class="score-card"><div class="score">10</div></div>
+                <div class="big-actions">
+                  <button class="tap-btn plus red">+1</button>
+                  <button class="tap-btn minus">-1</button>
+                </div>
+              </div>
+              <div class="player">
+                <div class="player-name">玩家 2</div>
+                <div class="serve-badge active">● 当前发球</div>
+                <div class="score-card"><div class="score">10</div></div>
+                <div class="big-actions">
+                  <button class="tap-btn plus blue">+1</button>
+                  <button class="tap-btn minus">-1</button>
+                </div>
+              </div>
+            </div>
+            <div class="bottom-nav">
+              <button>设定</button>
+              <button class="pause-btn">暂停</button>
+              <button class="serve-btn">换发</button>
+            </div>
+            <div class="overlay">
+              <div class="sheet">
+                <h3>指定当前发球方</h3>
+                <p>由主计分页底部的“换发”触发；选择后立即设为当前发球方。</p>
+                <button class="choice a">玩家 1 发球</button>
+                <button class="choice b">玩家 2 发球</button>
+                <button class="secondary">取消</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p0">
+        <div class="caption">选择暂停方<span class="entry">入口：主计分页底部点击“暂停”；先选择哪一方使用暂停，再进入锁定倒计时。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="返回">‹</button>
+              <div class="title">选择暂停方</div>
+              <button class="icon-btn" aria-label="全局设置">⚙</button>
+            </div>
+            <div class="settings-list">
+              <div class="hint-box">暂停规则：每方每场最多 1 次，暂停时长 60 秒。选择后立即锁定双方计分、换发和设定操作。</div>
+              <div class="pause-choice">
+                <div class="pause-side left">
+                  <strong>玩家 1</strong>
+                  <span class="pause-score">11 : 8</span>
+                  <small>本局暂停剩余</small>
+                  <div class="pause-dots"><span class="pause-dot"></span><span class="pause-dot used"></span></div>
+                  <button class="choice a">玩家 1 暂停</button>
+                </div>
+                <div class="pause-center"><span>选择暂停方</span><span>本场最多 1 次</span></div>
+                <div class="pause-side right">
+                  <strong>玩家 2</strong>
+                  <span class="pause-score">8 : 11</span>
+                  <small>本局暂停剩余</small>
+                  <div class="pause-dots"><span class="pause-dot"></span><span class="pause-dot"></span></div>
+                  <button class="choice b">玩家 2 暂停</button>
+                </div>
+              </div>
+              <button class="secondary">取消</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p0">
+        <div class="caption">暂停锁定<span class="entry">入口：选择暂停方后进入；倒计时结束或点击提前结束后恢复比赛。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen locked state-screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="返回">‹</button>
+              <div class="title">暂停中</div>
+              <button class="icon-btn" aria-label="全局设置">⚙</button>
+            </div>
+            <div class="match-strip">
+              <button class="start-btn">比赛中</button>
+              <div class="round-pill">当前局数：3/5</div>
+            </div>
+            <div class="sets-bar">
+              <div class="set-dot win">11:8</div>
+              <div class="set-dot">9:11</div>
+              <div class="set-dot">5:8</div>
+            </div>
+            <div class="score-zone">
+              <div class="player">
+                <div class="player-name">玩家 1</div>
+                <div class="serve-badge active">● 当前发球</div>
+                <div class="score-card"><div class="score">5</div></div>
+                <div class="big-actions">
+                  <button class="tap-btn plus red">+1</button>
+                  <button class="tap-btn minus">-1</button>
+                </div>
+              </div>
+              <div class="player">
+                <div class="player-name">玩家 2</div>
+                <div class="serve-badge">接发</div>
+                <div class="score-card"><div class="score">8</div></div>
+                <div class="big-actions">
+                  <button class="tap-btn plus blue">+1</button>
+                  <button class="tap-btn minus">-1</button>
+                </div>
+              </div>
+            </div>
+            <div class="bottom-nav">
+              <button>设定</button>
+              <button class="pause-btn">暂停</button>
+              <button class="serve-btn">换发</button>
+            </div>
+            <div class="pause-mask">
+              <div class="pause-card">
+                <h3>玩家 1 暂停</h3>
+                <p>暂停期间锁定 +1、-1、换发和设定；倒计时结束或提前结束后恢复。</p>
+                <div class="timer">00:43</div>
+                <button class="primary">提前结束暂停</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p0">
+        <div class="caption">比赛结束<span class="entry">入口：系统判定某方达到胜局数后自动弹出。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen state-screen result-screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="返回">‹</button>
+              <div class="title">比赛结束</div>
+              <button class="icon-btn" aria-label="全局设置">⚙</button>
+            </div>
+            <div class="match-strip">
+              <button class="start-btn">已结束</button>
+              <div class="round-pill">当前局数：6/7</div>
+            </div>
+            <div class="score-zone">
+              <div class="player">
+                <div class="player-name">玩家 1</div>
+                <div class="serve-badge active">胜方</div>
+                <div class="score-card"><div class="score">11</div></div>
+                <div class="big-actions">
+                  <button class="tap-btn plus red">+1</button>
+                  <button class="tap-btn minus">-1</button>
+                </div>
+              </div>
+              <div class="player">
+                <div class="player-name">玩家 2</div>
+                <div class="serve-badge">负方</div>
+                <div class="score-card"><div class="score">6</div></div>
+                <div class="big-actions">
+                  <button class="tap-btn plus blue">+1</button>
+                  <button class="tap-btn minus">-1</button>
+                </div>
+              </div>
+            </div>
+            <div class="modal-wrap">
+              <div class="result-card">
+                <div class="winner">玩家 1 获胜</div>
+                <p style="text-align:center">BO7 · 总比分 4:2</p>
+                <div class="match-score">
+                  <div class="final-winner">玩家 1<strong>4</strong></div>
+                  <span>:</span>
+                  <div class="final-loser">玩家 2<strong>2</strong></div>
+                </div>
+                <div class="sets">
+                  <div class="set-row"><span>第 1 局</span><b>11:8</b><em class="set-winner">玩家 1 胜</em></div>
+                  <div class="set-row"><span>第 2 局</span><b>9:11</b><em class="set-loser">玩家 2 胜</em></div>
+                  <div class="set-row"><span>第 3 局</span><b>12:10</b><em class="set-winner">玩家 1 胜</em></div>
+                  <div class="set-row"><span>第 4 局</span><b>11:6</b><em class="set-winner">玩家 1 胜</em></div>
+                  <div class="set-row"><span>第 5 局</span><b>8:11</b><em class="set-loser">玩家 2 胜</em></div>
+                  <div class="set-row"><span>第 6 局</span><b>11:7</b><em class="set-winner">玩家 1 胜</em></div>
+                </div>
+                <div class="actions">
+                  <button class="secondary">再来一场</button>
+                  <button class="primary">重新开始</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p0">
+        <div class="caption">主计分 - 横屏<span class="entry">入口：手机旋转到横屏自动切换，用于桌边远距离看分。</span></div>
+        <div class="phone landscape">
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="返回">‹</button>
+              <div class="title">乒乓球计分器</div>
+              <button class="icon-btn" aria-label="全局设置">⚙</button>
+            </div>
+            <div class="match-strip">
+              <button class="start-btn">比赛中</button>
+              <div class="round-pill">当前局数：2/5 <span>总局分 1:0</span></div>
+            </div>
+            <div class="score-zone">
+              <div class="player">
+                <div>
+                  <div class="player-name">玩家 1</div>
+                  <div class="serve-badge active">● 当前发球</div>
+                </div>
+                <div class="score-card"><div class="score">11</div></div>
+                <div class="big-actions">
+                  <button class="tap-btn plus red">+1</button>
+                  <button class="tap-btn minus">-1</button>
+                </div>
+              </div>
+              <div class="player">
+                <div>
+                  <div class="player-name">玩家 2</div>
+                  <div class="serve-badge">接发</div>
+                </div>
+                <div class="score-card"><div class="score">8</div></div>
+                <div class="big-actions">
+                  <button class="tap-btn plus blue">+1</button>
+                  <button class="tap-btn minus">-1</button>
+                </div>
+              </div>
+            </div>
+            <div class="bottom-nav">
+              <button>设定</button>
+              <button class="pause-btn">暂停</button>
+              <button class="serve-btn">换发</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p0">
+        <div class="caption">玩家名称编辑<span class="entry">入口：主计分页点击玩家名称，弹出名称编辑。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen compact-demo">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="返回">‹</button>
+              <div class="title">编辑玩家</div>
+              <button class="icon-btn" aria-label="保存">✓</button>
+            </div>
+            <div class="match-strip">
+              <button class="start-btn">比赛中</button>
+              <div class="round-pill">当前局数：1/3</div>
+            </div>
+            <div class="score-zone">
+              <div class="player">
+                <div class="player-name">王强</div>
+                <div class="serve-badge active">● 当前发球</div>
+                <div class="score-card"><div class="score">6</div></div>
+                <div class="big-actions">
+                  <button class="tap-btn plus red">+1</button>
+                  <button class="tap-btn minus">-1</button>
+                </div>
+              </div>
+              <div class="player">
+                <div class="player-name">玩家 2</div>
+                <div class="serve-badge">接发</div>
+                <div class="score-card"><div class="score">4</div></div>
+                <div class="big-actions">
+                  <button class="tap-btn plus blue">+1</button>
+                  <button class="tap-btn minus">-1</button>
+                </div>
+              </div>
+            </div>
+            <div class="modal-wrap">
+              <div class="form-card">
+                <h3>编辑玩家名称</h3>
+                <div class="field">
+                  <label>玩家 1</label>
+                  <div class="input">王强</div>
+                </div>
+                <div class="field">
+                  <label>玩家 2</label>
+                  <div class="input">玩家 2</div>
+                </div>
+                <div class="actions">
+                  <button class="secondary">取消</button>
+                  <button class="primary">保存</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p0">
+        <div class="caption">单局结束确认<span class="entry">入口：单局达到胜分且领先 2 分后自动弹出。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen compact-demo">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="返回">‹</button>
+              <div class="title">第 2 局结束</div>
+              <button class="icon-btn" aria-label="全局设置">⚙</button>
+            </div>
+            <div class="match-strip">
+              <button class="start-btn">局结束</button>
+              <div class="round-pill">总局分：1:1</div>
+            </div>
+            <div class="score-zone">
+              <div class="player">
+                <div class="player-name">玩家 1</div>
+                <div class="serve-badge">本局胜方</div>
+                <div class="score-card"><div class="score">12</div></div>
+                <div class="big-actions">
+                  <button class="tap-btn plus red">+1</button>
+                  <button class="tap-btn minus">-1</button>
+                </div>
+              </div>
+              <div class="player">
+                <div class="player-name">玩家 2</div>
+                <div class="serve-badge">下一局发球</div>
+                <div class="score-card"><div class="score">10</div></div>
+                <div class="big-actions">
+                  <button class="tap-btn plus blue">+1</button>
+                  <button class="tap-btn minus">-1</button>
+                </div>
+              </div>
+            </div>
+            <div class="modal-wrap">
+              <div class="confirmation">
+                <div class="mark">✓</div>
+                <h3>玩家 1 赢得第 2 局</h3>
+                <p>小分 12:10，当前总局分 1:1</p>
+                <div class="summary-lines">
+                  <div class="summary-line"><span>下一局</span><b>第 3 局</b></div>
+                  <div class="summary-line"><span>发球方</span><b>玩家 2</b></div>
+                </div>
+                <div class="actions">
+                  <button class="secondary">修正比分</button>
+                  <button class="primary">进入下一局</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p1">
+        <div class="caption">保存个人配置<span class="entry">入口：设定页点击“保存到个人预设”。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="返回">‹</button>
+              <div class="title">保存配置</div>
+              <button class="icon-btn" aria-label="完成">✓</button>
+            </div>
+            <div class="settings-list">
+              <div class="form-card" style="width:100%">
+                <h3>个人配置名称</h3>
+                <div class="field">
+                  <label>配置名</label>
+                  <div class="input">公司娱乐赛</div>
+                </div>
+                <div class="hint-box">保存后会出现在预设配置中，下次开赛可一键切换。</div>
+              </div>
+              <div class="setting-row">
+                <div><b>赛制</b><span>正规比赛支持 BO3 / BO5 / BO7</span></div>
+                <div class="value">BO7</div>
+              </div>
+              <div class="setting-row">
+                <div><b>单局分数</b><span>娱乐局规则</span></div>
+                <div class="value">21 分</div>
+              </div>
+              <div class="setting-row">
+                <div><b>发球规则</b><span>固定每 5 分换发</span></div>
+                <div class="value">每 5 分</div>
+              </div>
+              <button class="primary">保存到个人预设</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p0">
+        <div class="caption">重置比赛确认<span class="entry">入口：设定页点击“重置比赛”，二次确认后清空本场数据。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen compact-demo">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="返回">‹</button>
+              <div class="title">乒乓球计分器</div>
+              <button class="icon-btn" aria-label="全局设置">⚙</button>
+            </div>
+            <div class="match-strip">
+              <button class="start-btn">比赛中</button>
+              <div class="round-pill">当前局数：2/5</div>
+            </div>
+            <div class="score-zone">
+              <div class="player">
+                <div class="player-name">玩家 1</div>
+                <div class="serve-badge active">● 当前发球</div>
+                <div class="score-card"><div class="score">9</div></div>
+                <div class="big-actions">
+                  <button class="tap-btn plus red">+1</button>
+                  <button class="tap-btn minus">-1</button>
+                </div>
+              </div>
+              <div class="player">
+                <div class="player-name">玩家 2</div>
+                <div class="serve-badge">接发</div>
+                <div class="score-card"><div class="score">7</div></div>
+                <div class="big-actions">
+                  <button class="tap-btn plus blue">+1</button>
+                  <button class="tap-btn minus">-1</button>
+                </div>
+              </div>
+            </div>
+            <div class="modal-wrap">
+              <div class="confirmation danger-confirm">
+                <div class="mark">!</div>
+                <h3>确认重置比赛？</h3>
+                <p>当前比分、局分和暂停记录都会清空，赛制配置会保留。</p>
+                <div class="actions">
+                  <button class="secondary">取消</button>
+                  <button class="danger">确认重置</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p1">
+        <div class="caption">撤销加减分提示<span class="entry">入口：点击任一 +1 或 -1 后短暂出现；用于撤销刚刚的计分动作，不是由 -1 专门触发。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="返回">‹</button>
+              <div class="title">乒乓球计分器</div>
+              <button class="icon-btn" aria-label="全局设置">⚙</button>
+            </div>
+            <div class="match-strip">
+              <button class="start-btn">比赛中</button>
+              <div class="round-pill">当前局数：2/5</div>
+            </div>
+            <div class="sets-bar">
+              <div class="set-dot win">11:8</div>
+              <div class="set-dot">9:8</div>
+              <div class="set-dot">待赛</div>
+            </div>
+            <div class="score-zone">
+              <div class="player">
+                <div class="player-name">玩家 1</div>
+                <div class="serve-badge">接发</div>
+                <div class="score-card"><div class="score">9</div></div>
+                <div class="big-actions">
+                  <button class="tap-btn plus red">+1</button>
+                  <button class="tap-btn minus">-1</button>
+                </div>
+              </div>
+              <div class="player">
+                <div class="player-name">玩家 2</div>
+                <div class="serve-badge active">● 当前发球</div>
+                <div class="score-card"><div class="score">8</div></div>
+                <div class="big-actions">
+                  <button class="tap-btn plus blue">+1</button>
+                  <button class="tap-btn minus">-1</button>
+                </div>
+              </div>
+            </div>
+            <div class="bottom-nav">
+              <button>设定</button>
+              <button class="pause-btn">暂停</button>
+              <button class="serve-btn">换发</button>
+            </div>
+            <div class="sheet" style="position:absolute;left:18px;right:18px;bottom:102px;border-radius:8px">
+              <h3>已为玩家 1 加 1 分</h3>
+              <p>任意 +1 或 -1 后短暂出现；撤销的是上一步计分动作，不是仅由 -1 触发。</p>
+              <button class="secondary">撤销上一步</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p2">
+        <div class="caption">团队赛设置<span class="entry">入口：赛制设置页点击“团队赛”；适合多个队伍进行团体对抗。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="返回">‹</button>
+              <div class="title">团队赛设置</div>
+              <button class="icon-btn" aria-label="保存">✓</button>
+            </div>
+            <div class="settings-list">
+              <div class="hint-box">团队赛由多名选手组成队伍，按预设对阵完成多场单打或双打；每场结果累计为团队总比分。</div>
+              <div class="setting-row"><div><b>比赛类型</b><span>团体对抗，可包含单打和双打</span></div><div class="value">团队赛</div></div>
+              <div class="setting-row"><div><b>队伍数量</b><span>至少 2 队，可继续添加</span></div><div class="value">4 队</div></div>
+              <div class="setting-row"><div><b>每队人数</b><span>支持 2 至 6 名选手</span></div><div class="value">4 人</div></div>
+              <div class="setting-row"><div><b>单场赛制</b><span>每场支持 BO3 / BO5 / BO7</span></div><div class="value">BO3</div></div>
+              <div class="setting-row"><div><b>胜负判定</b><span>按小场胜场累计，先达到目标胜场的队伍获胜</span></div><div class="value">3 胜</div></div>
+              <div class="player-list">
+                <div class="player-item"><span class="avatar">A</span><span>A 队 · 王强 / 陈宇 / 周明 / 刘洋</span><span class="small-value">2 胜</span></div>
+                <div class="player-item"><span class="avatar">B</span><span>B 队 · 李娜 / 赵敏 / 孙杰 / 吴凡</span><span class="small-value">1 胜</span></div>
+              </div>
+              <button class="primary">开始团队赛</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p2">
+        <div class="caption">团队赛主计分<span class="entry">入口：团队赛设置点击“开始团队赛”；记录当前小场、队伍总胜场和下一场对阵。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="历史记录"><span class="history-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3a9 9 0 1 0 8.94 10h-2.02A7 7 0 1 1 13 5c1.93 0 3.68.79 4.95 2.05L15 10h6V4l-1.65 1.65A8.96 8.96 0 0 0 13 3zm-1 5v5l4 2.4 1-1.64-3-1.76V8h-2z"/></svg></span></button>
+              <div class="title">团队赛</div>
+              <button class="icon-btn" aria-label="全局设置">⚙</button>
+            </div>
+            <div class="match-strip">
+              <button class="start-btn">进行中</button>
+              <div class="round-pill">团队总比分：A 队 2 : 1 B 队</div>
+            </div>
+            <div class="sets-bar"><div class="set-dot win">第 1 场 A 胜</div><div class="set-dot win">第 2 场 B 胜</div><div class="set-dot win">第 3 场 A 胜</div></div>
+            <div class="settings-list">
+              <div class="hint-box">当前小场：第 4 场单打。完成后自动更新团队总比分；可在下一场前调整对阵，但不改变已完成记录。</div>
+              <div class="setting-row"><div><b>A 队 vs B 队</b><span>第 4 场 · 王强 vs 李娜 · BO3</span></div><div class="value">进行中</div></div>
+              <div class="setting-row"><div><b>队伍目标</b><span>先取得 3 场小场胜利</span></div><div class="value">2:1</div></div>
+              <button class="primary">进入当前小场</button>
+              <button class="secondary">安排下一场对阵</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p0">
+        <div class="caption">车轮赛选手池<span class="entry">入口：主计分页底部“设定” > 选择“车轮赛”；用于多人共用一张球桌时临时创建选手。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="返回">‹</button>
+              <div class="title">车轮赛</div>
+              <button class="icon-btn" aria-label="全局设置">⚙</button>
+            </div>
+            <div class="settings-list">
+              <div class="mode-tabs">
+                <button class="mode-tab">正规</button>
+                <button class="mode-tab">娱乐</button>
+                <button class="mode-tab on">车轮赛</button>
+              </div>
+              <div class="hint-box">默认 BO1 标准比赛模式。选手不要求固定顺序，也不限制每个人必须打几场，适合公司同事轮流上桌。</div>
+              <div class="setting-row">
+                <div><b>默认赛制</b><span>每次 PK 单局决胜，11 分制</span></div>
+                <div class="value">BO1</div>
+              </div>
+              <div class="player-list">
+                <div class="player-item"><span class="avatar">王</span><span>王强</span><span class="small-value">3 胜</span></div>
+                <div class="player-item"><span class="avatar">李</span><span>李娜</span><span class="small-value">2 胜</span></div>
+                <div class="player-item"><span class="avatar">陈</span><span>陈宇</span><span class="small-value">1 胜</span></div>
+                <div class="player-item"><span class="avatar">赵</span><span>赵敏</span><span class="small-value">待上场</span></div>
+              </div>
+              <button class="primary">添加选手</button>
+              <button class="secondary">选择两人开始 PK</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board" data-tab="p0">
+        <div class="caption">车轮赛选择对局<span class="entry">入口：车轮赛选手池点击“选择两人开始 PK”；任意选择两名同事，不按固定轮换顺序。</span></div>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>19:30</span><span>78%</span></div>
+            <div class="topbar">
+              <button class="icon-btn back" aria-label="返回">‹</button>
+              <div class="title">选择对局</div>
+              <button class="icon-btn" aria-label="全局设置">⚙</button>
+            </div>
+            <div class="settings-list">
+              <div class="pk-grid">
+                <div class="pk-name">王强</div>
+                <div class="vs">VS</div>
+                <div class="pk-name">赵敏</div>
+              </div>
+              <div class="setting-row">
+                <div><b>本局规则</b><span>车轮赛默认规则，可临时调整</span></div>
+                <div class="value">BO1</div>
+              </div>
+              <div class="setting-row">
+                <div><b>单局分数</b><span>11 分制，领先 2 分胜</span></div>
+                <div class="value">11 分</div>
+              </div>
+              <div class="player-list">
+                <div class="player-item"><span class="avatar">王</span><span>王强</span><span class="small-value">已选</span></div>
+                <div class="player-item"><span class="avatar">李</span><span>李娜</span><span class="small-value">可选</span></div>
+                <div class="player-item"><span class="avatar">陈</span><span>陈宇</span><span class="small-value">可选</span></div>
+                <div class="player-item"><span class="avatar">赵</span><span>赵敏</span><span class="small-value">已选</span></div>
+              </div>
+              <button class="primary">开始本轮 PK</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script>
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const boards = document.querySelectorAll('.canvas > .board');
+
+    function showTab(tabName) {
+      tabButtons.forEach((button) => {
+        button.classList.toggle('active', button.dataset.tab === tabName);
+      });
+      boards.forEach((board) => {
+        board.classList.toggle('active', board.dataset.tab === tabName);
+      });
+    }
+
+    tabButtons.forEach((button) => {
+      button.addEventListener('click', () => showTab(button.dataset.tab));
+    });
+
+    showTab('p0');
+  </script>
+</body>
+</html>

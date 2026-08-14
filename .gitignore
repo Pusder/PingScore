@@ -1,9 +1,15 @@
-# Gradle files
-.gradle/
-build/
-
-# Local configuration file (sdk path, etc)
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
 local.properties
+.gitmessage
+/.gradle-user/
 
 # Log/OS Files
 *.log
