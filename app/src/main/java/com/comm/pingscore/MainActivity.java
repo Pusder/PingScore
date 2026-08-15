@@ -44,6 +44,7 @@ import java.util.concurrent.Executors;
 public class MainActivity extends AppCompatActivity {
     private static final String PREFS = "match_state";
     private static final String KEY_ACTIVE = "active";
+    private static final String KEY_WHEEL_SESSION_ACTIVE = "wheel_session_active";
     private static final String KEY_MODE = "mode";
     private static final String KEY_PLAYERS = "players";
     private static final String KEY_HISTORY = "wheel_history";
@@ -63,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private MatchViewModel viewModel;
     private SharedPreferences prefs;
     private String mode = "regular";
+    private boolean wheelSessionActive;
     private String playerOne = "玩家 1";
     private String playerTwo = "玩家 2";
     private int targetScore = 11;
@@ -157,6 +159,8 @@ public class MainActivity extends AppCompatActivity {
         });
 
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        wheelSessionActive = prefs.getBoolean(KEY_WHEEL_SESSION_ACTIVE, false);
+        loadWheelPlayerPool();
         loadGlobalSettings();
         loadTeamSession();
         loadDoubleSession();
@@ -244,6 +248,8 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     toast("比赛进行中");
                 }
+            } else if (mode.equals("wheel") && wheelSessionActive) {
+                showWheelPairChooser();
             } else {
                 showModernMatchSetup();
             }
@@ -270,7 +276,19 @@ public class MainActivity extends AppCompatActivity {
         scoreAdjustButton.setOnClickListener(v -> showScoreAdjustDialog());
         findViewById(R.id.history_button).setOnClickListener(v -> showHistory());
         findViewById(R.id.global_settings_button).setOnClickListener(v -> showGlobalSettings());
-        teamQueueButton.setOnClickListener(v -> showAddTeamMatchDialog());
+        teamQueueButton.setOnClickListener(v -> {
+            if (mode.equals("wheel")) {
+                if (isWheelMatchActive()) {
+                    toast("当前 PK 进行中，结束后再安排下一场");
+                } else if (wheelSessionActive) {
+                    showWheelPairChooser();
+                } else {
+                    showModernMatchSetup();
+                }
+            } else {
+                showAddTeamMatchDialog();
+            }
+        });
         modeInfoButton.setOnClickListener(v -> showModeInfo());
     }
 
@@ -312,11 +330,17 @@ public class MainActivity extends AppCompatActivity {
             engine = new MatchEngine(3, MatchEngine.REGULAR_TARGET, 2);
         }
         if (mode.equals("doubles")) ensureDoublesRotation();
+        boolean started = engine.isStarted() && !engine.isFinished();
+        boolean wheelWaiting = mode.equals("wheel") && wheelSessionActive && !engine.isStarted();
         playerOneName.setText(playerOne);
         playerTwoName.setText(playerTwo);
         if (mode.equals("doubles")) {
             playerOneName.setText(teamOne + "\n" + memberSummary(doubleOneMembers));
             playerTwoName.setText(teamTwo + "\n" + memberSummary(doubleTwoMembers));
+        }
+        if (wheelWaiting) {
+            playerOneName.setText("待选择");
+            playerTwoName.setText("待选择");
         }
         int currentGameIndex = engine.getGameRecords().size();
         if (engine.isFinished()) {
@@ -339,7 +363,9 @@ public class MainActivity extends AppCompatActivity {
         playerTwoScore.setText(String.valueOf(displayedTwo));
         renderSetTabs();
         int displayGame = Math.min(engine.getGameNumber(), engine.getBestOf());
-        if (mode.equals("team")) {
+        if (wheelWaiting) {
+            progressView.setText("车轮赛 · 待选择下一场 PK · 选手池 " + wheelPlayers.size() + " 人");
+        } else if (mode.equals("team")) {
             progressView.setText("团队赛 · " + teamStandings()
                     + " · 当前小场 " + playerOne + " vs " + playerTwo);
         } else {
@@ -350,9 +376,11 @@ public class MainActivity extends AppCompatActivity {
                     + "BO" + engine.getBestOf() + " · 第 " + (selectedGameIndex + 1) + " 局 / " + engine.getBestOf()
                     + " · 大比分 " + engine.getWinsOne() + ":" + engine.getWinsTwo());
         }
-        boolean started = engine.isStarted() && !engine.isFinished();
         startButton.setText(started ? (engine.getPauseOwner() >= 0 ? "继续比赛" : "比赛中")
                 : (prefs.getBoolean(KEY_ACTIVE, false) ? "继续比赛" : "开始比赛"));
+        if (mode.equals("wheel") && wheelSessionActive && !started) {
+            startButton.setText("选择下一场 PK");
+        }
         boolean selectedCurrent = selectedGameIndex == currentGameIndex && !engine.isFinished();
         boolean playerOneServing = selectedCurrent && engine.getCurrentServer() == 0;
         lastServer = engine.getCurrentServer();
@@ -393,12 +421,21 @@ public class MainActivity extends AppCompatActivity {
                 .setEnabled(engine.getPauseOwner() < 0);
         serveButton.setEnabled(started && selectedCurrent && engine.getPauseOwner() < 0);
         setScoreControlsEnabled(started && selectedCurrent && engine.getPauseOwner() < 0,
-                selectedCurrent);
+                started && selectedCurrent);
         boolean completedSelected = selectedGameIndex < engine.getGameRecords().size();
         scoreAdjustButton.setVisibility(completedSelected ? View.VISIBLE : View.GONE);
         scoreAdjustButton.setText("赛果调整");
-        teamQueueButton.setVisibility(mode.equals("team") ? View.VISIBLE : View.GONE);
+        boolean showQueue = mode.equals("team") || (mode.equals("wheel") && wheelSessionActive);
+        teamQueueButton.setVisibility(showQueue ? View.VISIBLE : View.GONE);
         teamQueueButton.setText("待赛  + 添加对局（" + teamPending.size() + "）");
+        if (mode.equals("wheel")) {
+            teamQueueButton.setText("待赛  + 选择下一场 PK");
+            teamQueueButton.setEnabled(!started);
+            teamQueueButton.setAlpha(started ? 0.48f : 1f);
+        } else {
+            teamQueueButton.setEnabled(true);
+            teamQueueButton.setAlpha(1f);
+        }
         modeInfoButton.setVisibility(mode.equals("doubles") || mode.equals("team")
                 ? View.VISIBLE : View.GONE);
         modeInfoButton.setText(mode.equals("doubles") ? "双打规则说明" : "团队赛规则说明");
@@ -543,17 +580,16 @@ public class MainActivity extends AppCompatActivity {
             boolean isTeam = team.isChecked();
             if (isWheel) {
                 wheelPlayers.clear();
-                for (String name : pool.getText().toString().split("\\r?\\n")) {
-                    if (!name.trim().isEmpty() && !wheelPlayers.contains(name.trim())) {
-                        wheelPlayers.add(name.trim());
-                    }
-                }
-                if (wheelPlayers.size() < 2) {
+                wheelPlayers.addAll(WheelRacePolicy.normalizePool(
+                        Arrays.asList(pool.getText().toString().split("\\r?\\n"))));
+                if (!WheelRacePolicy.hasValidPool(wheelPlayers)) {
                     pool.setError("至少添加 2 名选手");
                     return;
                 }
                 mode = "wheel";
+                wheelSessionActive = true;
                 persistWheelPlayers();
+                persistWheelSession();
                 dialog.dismiss();
                 showWheelPairChooser();
                 return;
@@ -570,6 +606,7 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
                 mode = "team";
+                wheelSessionActive = false;
                 teamWinsOne = 0;
                 teamWinsTwo = 0;
                 teamPending.clear();
@@ -581,6 +618,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             mode = "regular";
+            wheelSessionActive = false;
             playerOne = one.getText().toString().trim().isEmpty() ? "玩家 1" : one.getText().toString().trim();
             playerTwo = two.getText().toString().trim().isEmpty() ? "玩家 2" : two.getText().toString().trim();
             int bestOf = Integer.parseInt(String.valueOf(boSpinner.getSelectedItem()).substring(2));
@@ -905,15 +943,17 @@ public class MainActivity extends AppCompatActivity {
                 if (isWheel) {
                     wheelPlayers.clear();
                     String names = readEditorNames(wheelInputs);
-                    wheelPlayers.addAll(Arrays.asList(names.split("\\n")));
-                    if (wheelPlayers.size() < 2) {
+                    wheelPlayers.addAll(WheelRacePolicy.normalizePool(Arrays.asList(names.split("\\n"))));
+                    if (!WheelRacePolicy.hasValidPool(wheelPlayers)) {
                         toast("车轮赛至少需要 2 名选手");
                         return;
                     }
                     mode = "wheel";
+                    wheelSessionActive = true;
                     targetScore = 11;
                     serveInterval = 2;
                     persistWheelPlayers();
+                    persistWheelSession();
                     engine = new MatchEngine(1, targetScore, serveInterval);
                     dialog.dismiss();
                     showWheelPairChooser();
@@ -949,6 +989,7 @@ public class MainActivity extends AppCompatActivity {
                     teamTargetWins = Integer.parseInt(String.valueOf(teamTargetSpinner.getSelectedItem())
                             .replaceAll("[^0-9]", ""));
                     mode = "team";
+                    wheelSessionActive = false;
                     teamWinsOne = 0;
                     teamWinsTwo = 0;
                     teamWins.clear();
@@ -978,6 +1019,7 @@ public class MainActivity extends AppCompatActivity {
                     doubleOneMembers = firstMembers;
                     doubleTwoMembers = secondMembers;
                     mode = "doubles";
+                    wheelSessionActive = false;
                     playerOne = teamOne;
                     playerTwo = teamTwo;
                     targetScore = 11;
@@ -993,6 +1035,7 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
                 mode = isEntertainment ? "entertainment" : "regular";
+                wheelSessionActive = false;
                 playerOne = valueOrDefault(one, "玩家 1");
                 playerTwo = valueOrDefault(two, "玩家 2");
                 targetScore = isEntertainment
@@ -1188,18 +1231,18 @@ public class MainActivity extends AppCompatActivity {
                 boolean isTeam = team.isChecked();
                 if (isWheel) {
                     wheelPlayers.clear();
-                    for (String name : pool.getText().toString().split("\\r?\\n")) {
-                        String trimmed = name.trim();
-                        if (!trimmed.isEmpty() && !wheelPlayers.contains(trimmed)) wheelPlayers.add(trimmed);
-                    }
-                    if (wheelPlayers.size() < 2) {
+                    wheelPlayers.addAll(WheelRacePolicy.normalizePool(
+                            Arrays.asList(pool.getText().toString().split("\\r?\\n"))));
+                    if (!WheelRacePolicy.hasValidPool(wheelPlayers)) {
                         pool.setError("至少添加 2 名选手");
                         return;
                     }
                     mode = "wheel";
+                    wheelSessionActive = true;
                     targetScore = 11;
                     serveInterval = 2;
                     persistWheelPlayers();
+                    persistWheelSession();
                     engine = new MatchEngine(1, targetScore, serveInterval);
                     dialog.dismiss();
                     showWheelPairChooser();
@@ -1264,6 +1307,7 @@ public class MainActivity extends AppCompatActivity {
                         return;
                     }
                     mode = "doubles";
+                    wheelSessionActive = false;
                     playerOne = teamOne;
                     playerTwo = teamTwo;
                     targetScore = 11;
@@ -1279,6 +1323,7 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
                 mode = isEntertainment ? "entertainment" : "regular";
+                wheelSessionActive = false;
                 playerOne = valueOrDefault(one, "玩家 1");
                 playerTwo = valueOrDefault(two, "玩家 2");
                 targetScore = isEntertainment
@@ -1611,29 +1656,84 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showWheelPairChooser() {
-        if (wheelPlayers.size() < 2) return;
-        List<String> pairs = new ArrayList<>();
-        for (int i = 0; i < wheelPlayers.size(); i++) {
-            for (int j = i + 1; j < wheelPlayers.size(); j++) {
-                pairs.add(wheelPlayers.get(i) + "  vs  " + wheelPlayers.get(j));
-            }
+        List<String> normalizedPlayers = WheelRacePolicy.normalizePool(wheelPlayers);
+        wheelPlayers.clear();
+        wheelPlayers.addAll(normalizedPlayers);
+        if (!WheelRacePolicy.hasValidPool(wheelPlayers)) {
+            toast("车轮赛至少需要 2 名选手");
+            return;
         }
+        if (isWheelMatchActive()) {
+            toast("当前 PK 进行中，结束后再安排下一场");
+            return;
+        }
+
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(18), dp(4), dp(18), dp(4));
+
+        TextView hint = new TextView(this);
+        hint.setText("每次自由选择两名选手；允许重复组合，不限制顺序和场次");
+        hint.setTextColor(getColor(R.color.score_muted));
+        hint.setTextSize(14);
+        hint.setLineSpacing(dp(3), 1f);
+        content.addView(hint, dialogFormParams(-2, 0));
+
+        TextView firstLabel = new TextView(this);
+        firstLabel.setText("选手 1");
+        firstLabel.setTextColor(getColor(R.color.score_ink));
+        firstLabel.setTextSize(14);
+        firstLabel.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
+        content.addView(firstLabel, dialogFormParams(28, 10));
+
+        Spinner firstSpinner = new Spinner(this);
+        firstSpinner.setAdapter(new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_dropdown_item, wheelPlayers));
+        MatchUiStyler.styleSpinner(firstSpinner);
+        content.addView(firstSpinner, dialogFormParams(48, 0));
+
+        TextView secondLabel = new TextView(this);
+        secondLabel.setText("选手 2");
+        secondLabel.setTextColor(getColor(R.color.score_ink));
+        secondLabel.setTextSize(14);
+        secondLabel.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
+        content.addView(secondLabel, dialogFormParams(28, 10));
+
+        Spinner secondSpinner = new Spinner(this);
+        secondSpinner.setAdapter(new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_dropdown_item, wheelPlayers));
+        if (secondSpinner.getCount() > 1) secondSpinner.setSelection(1);
+        MatchUiStyler.styleSpinner(secondSpinner);
+        content.addView(secondSpinner, dialogFormParams(48, 0));
+
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("选择下一场 PK")
-                .setItems(pairs.toArray(new String[0]), (ignored, which) -> {
-                    String[] selected = pairs.get(which).split("  vs  ");
-                    playerOne = selected[0].trim();
-                    playerTwo = selected[1].trim();
+                .setView(content)
+                .setNegativeButton("稍后安排", (d, w) -> prepareWheelWaitingState())
+                .setPositiveButton("开始 PK", null)
+                .create();
+        dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setOnClickListener(v -> {
+                    int firstIndex = firstSpinner.getSelectedItemPosition();
+                    int secondIndex = secondSpinner.getSelectedItemPosition();
+                    if (!WheelRacePolicy.canStartPair(wheelPlayers, firstIndex, secondIndex)) {
+                        toast("请选择两名不同选手");
+                        return;
+                    }
+                    playerOne = wheelPlayers.get(firstIndex);
+                    playerTwo = wheelPlayers.get(secondIndex);
                     targetScore = 11;
                     serveInterval = 2;
+                    wheelSessionActive = true;
                     engine = new MatchEngine(1, targetScore, serveInterval);
                     engine.start();
                     persist();
+                    dialog.dismiss();
                     render();
-                })
-                .setNegativeButton("取消", null)
-                .create();
+                }));
         showStyledDialog(dialog);
+        firstSpinner.setSelection(0);
+        if (secondSpinner.getCount() > 1) secondSpinner.setSelection(1);
     }
 
     private void showServeChooser() {
@@ -1937,18 +2037,19 @@ public class MainActivity extends AppCompatActivity {
         if (mode.equals("wheel")) {
             appendWheelHistory(winner + " " + engine.getWinsOne() + ":" + engine.getWinsTwo());
         }
-        AlertDialog dialog = new AlertDialog.Builder(this)
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
                 .setTitle("比赛结束")
-                .setMessage(result.toString())
-                .setNegativeButton("完成", (d, w) -> clearActive())
-                .setPositiveButton(mode.equals("wheel") ? "下一场 PK" : "再来一场", null)
-                .create();
-        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-            clearActive();
-            dialog.dismiss();
-            if (mode.equals("wheel")) showWheelPairChooser();
-            else showModernMatchSetup();
-        }));
+                .setMessage(result.toString());
+        if (mode.equals("wheel")) {
+            builder.setNegativeButton("稍后安排", null)
+                    .setNeutralButton("结束车轮赛", null)
+                    .setPositiveButton("选择下一场 PK", null);
+        } else {
+            builder.setNegativeButton("完成", (d, w) -> clearActive())
+                    .setPositiveButton("再来一场", null);
+        }
+        AlertDialog dialog = builder.create();
+        bindResultDialogActions(dialog);
         showStyledDialog(dialog);
     }
 
@@ -2025,19 +2126,51 @@ public class MainActivity extends AppCompatActivity {
         ScrollView resultScroll = new ScrollView(this);
         resultScroll.setFillViewport(true);
         resultScroll.addView(resultContent);
-        AlertDialog dialog = new AlertDialog.Builder(this)
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
                 .setTitle("比赛结束")
-                .setView(resultScroll)
-                .setNegativeButton("完成", (d, w) -> clearActive())
-                .setPositiveButton(mode.equals("wheel") ? "下一场 PK" : "再来一场", null)
-                .create();
-        dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-            clearActive();
-            dialog.dismiss();
-            if (mode.equals("wheel")) showWheelPairChooser();
-            else showModernMatchSetup();
-        }));
+                .setView(resultScroll);
+        if (mode.equals("wheel")) {
+            builder.setNegativeButton("稍后安排", null)
+                    .setNeutralButton("结束车轮赛", null)
+                    .setPositiveButton("选择下一场 PK", null);
+        } else {
+            builder.setNegativeButton("完成", (d, w) -> clearActive())
+                    .setPositiveButton("再来一场", null);
+        }
+        AlertDialog dialog = builder.create();
+        bindResultDialogActions(dialog);
         showStyledDialog(dialog);
+    }
+
+    private void bindResultDialogActions(AlertDialog dialog) {
+        dialog.setOnCancelListener(ignored -> {
+            if (mode.equals("wheel") && wheelSessionActive
+                    && engine != null && engine.isFinished()) {
+                prepareWheelWaitingState();
+            }
+        });
+        dialog.setOnShowListener(ignored -> {
+            if (mode.equals("wheel")) {
+                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener(v -> {
+                    dialog.dismiss();
+                    prepareWheelWaitingState();
+                });
+                dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
+                    dialog.dismiss();
+                    finishWheelSession();
+                });
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                    dialog.dismiss();
+                    prepareWheelWaitingState();
+                    showWheelPairChooser();
+                });
+            } else {
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                    dialog.dismiss();
+                    showModernMatchSetup();
+                });
+            }
+        });
     }
 
     private TextView createResultScore(String player, int score, int colorResource) {
@@ -2498,6 +2631,7 @@ public class MainActivity extends AppCompatActivity {
             records.append(record.playerOne).append(',').append(record.playerTwo).append(',').append(record.winner);
         }
         prefs.edit().putBoolean(KEY_ACTIVE, engine.isStarted() && !engine.isFinished())
+                .putBoolean(KEY_WHEEL_SESSION_ACTIVE, mode.equals("wheel") && wheelSessionActive)
                 .putString(KEY_MODE, mode)
                 .putString(KEY_PLAYERS, playerOne + "\n" + playerTwo)
                 .putInt("bo", engine.getBestOf())
@@ -2525,19 +2659,31 @@ public class MainActivity extends AppCompatActivity {
         mode = prefs.getString(KEY_MODE, defaultMode);
         if (mode.equals("team")) loadTeamSession();
         if (mode.equals("doubles")) loadDoubleSession();
-        if (!prefs.getBoolean(KEY_ACTIVE, false)) {
+        if (mode.equals("wheel")) {
+            loadWheelPlayerPool();
+            boolean hasWheelSessionKey = prefs.contains(KEY_WHEEL_SESSION_ACTIVE);
+            wheelSessionActive = prefs.getBoolean(KEY_WHEEL_SESSION_ACTIVE, false);
+            if (!hasWheelSessionKey && WheelRacePolicy.hasValidPool(wheelPlayers)) {
+                wheelSessionActive = true;
+                persistWheelSession();
+            }
+        } else {
+            wheelSessionActive = false;
+        }
+        boolean activeMatch = prefs.getBoolean(KEY_ACTIVE, false);
+        if (!activeMatch) {
             int defaultBo = mode.equals("wheel") ? 1 : 3;
             int defaultTarget = mode.equals("entertainment") ? targetScore : MatchEngine.REGULAR_TARGET;
             int defaultServe = mode.equals("entertainment") ? serveInterval : 2;
             engine = new MatchEngine(defaultBo, defaultTarget, defaultServe);
-            return;
-        }
-        if (mode.equals("wheel")) {
-            String savedPool = prefs.getString("wheel_players", "");
-            if (!savedPool.isEmpty()) {
-                wheelPlayers.clear();
-                wheelPlayers.addAll(Arrays.asList(savedPool.split("\\n")));
+            if (mode.equals("wheel") && wheelSessionActive) {
+                playerOne = "待选择";
+                playerTwo = "待选择";
+                targetScore = 11;
+                serveInterval = 2;
+                prefs.edit().putBoolean(KEY_WHEEL_SESSION_ACTIVE, true).apply();
             }
+            return;
         }
         String[] names = prefs.getString(KEY_PLAYERS, "玩家 1\n玩家 2").split("\\n", 2);
         playerOne = names.length > 0 ? names[0] : "玩家 1";
@@ -2579,8 +2725,63 @@ public class MainActivity extends AppCompatActivity {
         render();
     }
 
+    private boolean isWheelMatchActive() {
+        return mode.equals("wheel") && engine != null
+                && engine.isStarted() && !engine.isFinished();
+    }
+
+    private void loadWheelPlayerPool() {
+        wheelPlayers.clear();
+        String savedPool = prefs.getString("wheel_players", "");
+        if (!savedPool.isEmpty()) {
+            wheelPlayers.addAll(WheelRacePolicy.normalizePool(
+                    Arrays.asList(savedPool.split("\\n"))));
+        }
+    }
+
+    private void prepareWheelWaitingState() {
+        mode = "wheel";
+        wheelSessionActive = true;
+        playerOne = "待选择";
+        playerTwo = "待选择";
+        targetScore = 11;
+        serveInterval = 2;
+        engine = new MatchEngine(1, targetScore, serveInterval);
+        pauseStartedAt = 0L;
+        pauseHandler.removeCallbacks(pauseExpiry);
+        pauseHandler.removeCallbacks(pauseTicker);
+        selectedGameIndex = 0;
+        persistWheelPlayers();
+        persist();
+        render();
+    }
+
+    private void finishWheelSession() {
+        wheelSessionActive = false;
+        playerOne = "玩家 1";
+        playerTwo = "玩家 2";
+        targetScore = 11;
+        serveInterval = 2;
+        prefs.edit()
+                .putBoolean(KEY_WHEEL_SESSION_ACTIVE, false)
+                .putBoolean(KEY_ACTIVE, false)
+                .apply();
+        clearActive();
+    }
+
     private void persistWheelPlayers() {
+        List<String> normalized = WheelRacePolicy.normalizePool(wheelPlayers);
+        wheelPlayers.clear();
+        wheelPlayers.addAll(normalized);
         prefs.edit().putString("wheel_players", String.join("\n", wheelPlayers)).apply();
+    }
+
+    private void persistWheelSession() {
+        prefs.edit()
+                .putString(KEY_MODE, "wheel")
+                .putBoolean(KEY_WHEEL_SESSION_ACTIVE, wheelSessionActive)
+                .putString("wheel_players", String.join("\n", wheelPlayers))
+                .apply();
     }
 
     private void persistTeamSession() {
