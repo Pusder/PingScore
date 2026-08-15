@@ -1668,6 +1668,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        WheelRaceSelection selection = new WheelRaceSelection(2);
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
         content.setPadding(dp(18), dp(4), dp(18), dp(4));
@@ -1679,61 +1680,179 @@ public class MainActivity extends AppCompatActivity {
         hint.setLineSpacing(dp(3), 1f);
         content.addView(hint, dialogFormParams(-2, 0));
 
-        TextView firstLabel = new TextView(this);
-        firstLabel.setText("选手 1");
-        firstLabel.setTextColor(getColor(R.color.score_ink));
-        firstLabel.setTextSize(14);
-        firstLabel.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
-        content.addView(firstLabel, dialogFormParams(28, 10));
+        TextView selectionSummary = new TextView(this);
+        selectionSummary.setTextColor(getColor(R.color.score_ink));
+        selectionSummary.setTextSize(15);
+        selectionSummary.setLineSpacing(dp(3), 1f);
+        selectionSummary.setGravity(Gravity.CENTER_VERTICAL);
+        selectionSummary.setPadding(dp(14), dp(10), dp(14), dp(10));
+        selectionSummary.setBackgroundResource(R.drawable.bg_wheel_player);
+        content.addView(selectionSummary, dialogFormParams(-2, 10));
 
-        Spinner firstSpinner = new Spinner(this);
-        firstSpinner.setAdapter(new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_dropdown_item, wheelPlayers));
-        MatchUiStyler.styleSpinner(firstSpinner);
-        content.addView(firstSpinner, dialogFormParams(48, 0));
+        LinearLayout rules = new LinearLayout(this);
+        rules.setOrientation(LinearLayout.HORIZONTAL);
+        rules.setWeightSum(2f);
+        LinearLayout ruleBo = createWheelRuleItem("本局规则", "BO1");
+        LinearLayout ruleScore = createWheelRuleItem("单局分数", "11 分");
+        LinearLayout.LayoutParams ruleParams = new LinearLayout.LayoutParams(0, dp(58), 1f);
+        ruleParams.rightMargin = dp(4);
+        rules.addView(ruleBo, ruleParams);
+        LinearLayout.LayoutParams scoreParams = new LinearLayout.LayoutParams(0, dp(58), 1f);
+        scoreParams.leftMargin = dp(4);
+        rules.addView(ruleScore, scoreParams);
+        content.addView(rules, dialogFormParams(-2, 8));
 
-        TextView secondLabel = new TextView(this);
-        secondLabel.setText("选手 2");
-        secondLabel.setTextColor(getColor(R.color.score_ink));
-        secondLabel.setTextSize(14);
-        secondLabel.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
-        content.addView(secondLabel, dialogFormParams(28, 10));
+        TextView listTitle = new TextView(this);
+        listTitle.setText("选择两名选手");
+        listTitle.setTextColor(getColor(R.color.score_ink));
+        listTitle.setTextSize(14);
+        listTitle.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
+        content.addView(listTitle, dialogFormParams(28, 12));
 
-        Spinner secondSpinner = new Spinner(this);
-        secondSpinner.setAdapter(new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_dropdown_item, wheelPlayers));
-        if (secondSpinner.getCount() > 1) secondSpinner.setSelection(1);
-        MatchUiStyler.styleSpinner(secondSpinner);
-        content.addView(secondSpinner, dialogFormParams(48, 0));
+        List<LinearLayout> playerItems = new ArrayList<>();
+        List<TextView> playerStatuses = new ArrayList<>();
+        AlertDialog[] dialogHolder = new AlertDialog[1];
+        for (int i = 0; i < wheelPlayers.size(); i++) {
+            final int playerIndex = i;
+            LinearLayout item = createWheelPlayerItem(wheelPlayers.get(i), i, playerStatuses);
+            item.setOnClickListener(v -> {
+                boolean changed = selection.toggle(playerIndex, wheelPlayers.size());
+                if (!changed && !selection.isSelected(playerIndex)) {
+                    toast("最多选择 2 名选手");
+                    return;
+                }
+                updateWheelSelectionUi(selection, selectionSummary, playerItems,
+                        playerStatuses, dialogHolder[0]);
+            });
+            playerItems.add(item);
+            content.addView(item, dialogFormParams(-2, 8));
+        }
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        scroll.addView(content);
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("选择下一场 PK")
-                .setView(content)
+                .setView(scroll)
                 .setNegativeButton("稍后安排", (d, w) -> prepareWheelWaitingState())
                 .setPositiveButton("开始 PK", null)
                 .create();
-        dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-                .setOnClickListener(v -> {
-                    int firstIndex = firstSpinner.getSelectedItemPosition();
-                    int secondIndex = secondSpinner.getSelectedItemPosition();
-                    if (!WheelRacePolicy.canStartPair(wheelPlayers, firstIndex, secondIndex)) {
-                        toast("请选择两名不同选手");
-                        return;
-                    }
-                    playerOne = wheelPlayers.get(firstIndex);
-                    playerTwo = wheelPlayers.get(secondIndex);
-                    targetScore = 11;
-                    serveInterval = 2;
-                    wheelSessionActive = true;
-                    engine = new MatchEngine(1, targetScore, serveInterval);
-                    engine.start();
-                    persist();
-                    dialog.dismiss();
-                    render();
-                }));
+        dialogHolder[0] = dialog;
+        dialog.setOnShowListener(ignored -> {
+            updateWheelSelectionUi(selection, selectionSummary, playerItems,
+                    playerStatuses, dialogHolder[0]);
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                List<Integer> selected = selection.getSelectedIndexes();
+                if (selected.size() != 2
+                        || !WheelRacePolicy.canStartPair(wheelPlayers, selected.get(0), selected.get(1))) {
+                    toast("请选择两名不同选手");
+                    return;
+                }
+                playerOne = wheelPlayers.get(selected.get(0));
+                playerTwo = wheelPlayers.get(selected.get(1));
+                targetScore = 11;
+                serveInterval = 2;
+                wheelSessionActive = true;
+                engine = new MatchEngine(1, targetScore, serveInterval);
+                engine.start();
+                persist();
+                dialog.dismiss();
+                render();
+            });
+        });
         showStyledDialog(dialog);
-        firstSpinner.setSelection(0);
-        if (secondSpinner.getCount() > 1) secondSpinner.setSelection(1);
+    }
+
+    private LinearLayout createWheelRuleItem(String label, String value) {
+        LinearLayout item = new LinearLayout(this);
+        item.setOrientation(LinearLayout.VERTICAL);
+        item.setGravity(Gravity.CENTER_VERTICAL);
+        item.setPadding(dp(12), dp(6), dp(12), dp(6));
+        item.setBackgroundResource(R.drawable.bg_dialog_section);
+
+        TextView labelView = new TextView(this);
+        labelView.setText(label);
+        labelView.setTextColor(getColor(R.color.score_muted));
+        labelView.setTextSize(12);
+        item.addView(labelView, new LinearLayout.LayoutParams(-1, dp(20)));
+
+        TextView valueView = new TextView(this);
+        valueView.setText(value);
+        valueView.setTextColor(getColor(R.color.score_ink));
+        valueView.setTextSize(15);
+        valueView.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
+        item.addView(valueView, new LinearLayout.LayoutParams(-1, dp(22)));
+        return item;
+    }
+
+    private LinearLayout createWheelPlayerItem(String player, int index,
+                                                List<TextView> playerStatuses) {
+        LinearLayout item = new LinearLayout(this);
+        item.setOrientation(LinearLayout.HORIZONTAL);
+        item.setGravity(Gravity.CENTER_VERTICAL);
+        item.setPadding(dp(12), dp(7), dp(12), dp(7));
+        item.setMinimumHeight(dp(58));
+        item.setTag(index);
+        item.setClickable(true);
+        item.setFocusable(true);
+        item.setBackgroundResource(R.drawable.bg_wheel_player);
+
+        TextView avatar = new TextView(this);
+        String initial = player == null || player.trim().isEmpty()
+                ? "?" : player.trim().substring(0, 1);
+        avatar.setText(initial);
+        avatar.setGravity(Gravity.CENTER);
+        avatar.setTextColor(getColor(R.color.score_blue));
+        avatar.setTextSize(16);
+        avatar.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
+        avatar.setBackgroundResource(R.drawable.bg_round_pill);
+        LinearLayout.LayoutParams avatarParams = new LinearLayout.LayoutParams(dp(38), dp(38));
+        avatarParams.rightMargin = dp(10);
+        item.addView(avatar, avatarParams);
+
+        TextView name = new TextView(this);
+        name.setText(player);
+        name.setTextColor(getColor(R.color.score_ink));
+        name.setTextSize(16);
+        name.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
+        item.addView(name, new LinearLayout.LayoutParams(0, -2, 1f));
+
+        TextView status = new TextView(this);
+        status.setText("可选");
+        status.setTextColor(getColor(R.color.score_muted));
+        status.setTextSize(13);
+        status.setGravity(Gravity.CENTER);
+        status.setMinWidth(dp(44));
+        playerStatuses.add(status);
+        item.addView(status, new LinearLayout.LayoutParams(-2, dp(32)));
+        return item;
+    }
+
+    private void updateWheelSelectionUi(WheelRaceSelection selection,
+                                        TextView selectionSummary,
+                                        List<LinearLayout> playerItems,
+                                        List<TextView> playerStatuses,
+                                        AlertDialog dialog) {
+        List<Integer> selected = selection.getSelectedIndexes();
+        String first = selected.size() > 0 ? wheelPlayers.get(selected.get(0)) : "待选择";
+        String second = selected.size() > 1 ? wheelPlayers.get(selected.get(1)) : "待选择";
+        selectionSummary.setText("已选择 " + selection.size() + "/2\n"
+                + first + "  VS  " + second);
+        for (int i = 0; i < playerItems.size(); i++) {
+            boolean isSelected = selection.isSelected(i);
+            playerItems.get(i).setBackgroundResource(isSelected
+                    ? R.drawable.bg_wheel_player_selected : R.drawable.bg_wheel_player);
+            TextView status = playerStatuses.get(i);
+            status.setText(isSelected ? "已选" : "可选");
+            status.setTextColor(getColor(isSelected
+                    ? R.color.score_blue : R.color.score_muted));
+        }
+        View startButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+        if (startButton != null) {
+            startButton.setEnabled(selection.isComplete());
+            startButton.setAlpha(selection.isComplete() ? 1f : 0.45f);
+        }
     }
 
     private void showServeChooser() {
