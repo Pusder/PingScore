@@ -120,13 +120,11 @@ git commit -m "feat(ui): establish match console visual tokens"
 
 - [ ] **Step 1: Write the tab rendering test**
 
-Inflate `item_set_tab`, bind the three adapter states, and assert exact text plus status-specific styling:
+Inflate `item_set_tab`, bind the three adapter states, and assert their exact visible text. Status-specific drawable selection is covered by the Task 2 device screenshot instead of exposing adapter internals solely for a test:
 
 ```java
 assertEquals("第 2 局\n0:0", currentHolder.label.getText().toString());
 assertEquals("第 3 局\n待赛", pendingHolder.label.getText().toString());
-assertTrue(currentHolder.label.getBackground().getConstantState()
-        .equals(context.getDrawable(R.drawable.bg_set_current).getConstantState()));
 ```
 
 - [ ] **Step 2: Run the test to verify the baseline**
@@ -138,7 +136,7 @@ $env:GRADLE_USER_HOME='E:\Android\.gradle'
 & 'E:\Android\.gradle\wrapper\dists\gradle-9.3.1-bin\23ovyewtku6u96viwx3xl3oks\gradle-9.3.1\bin\gradle.bat' :app:connectedDebugAndroidTest --offline --no-daemon
 ```
 
-Expected: current text behavior is confirmed; adjust the test only if drawable constant-state comparison is device-specific.
+Expected: current text behavior is confirmed before layout changes; the test does not need a production-only styling hook.
 
 - [ ] **Step 3: Implement the portrait layout**
 
