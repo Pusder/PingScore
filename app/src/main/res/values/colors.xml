@@ -3,10 +3,16 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="score_bg">#FFEEF4F8</color>
-    <color name="score_ink">#FF0B0F14</color>
+    <color name="score_surface">#FFFFFFFF</color>
+    <color name="score_surface_soft">#FFEEF3F7</color>
+    <color name="score_border">#FFD5DEE6</color>
+    <color name="score_ink">#FF17212B</color>
     <color name="score_black">#FF020609</color>
-    <color name="score_muted">#FF697582</color>
+    <color name="score_muted">#FF6F7B87</color>
     <color name="score_green_dark">#FF08361F</color>
-    <color name="score_blue">#FF1F6EC7</color>
-    <color name="score_red">#FFEF4F4F</color>
+    <color name="score_blue">#FF2675D8</color>
+    <color name="score_red">#FFEB565D</color>
+    <color name="score_green">#FF1FAC71</color>
+    <color name="score_settings">#FF1B2732</color>
+    <color name="score_pause">#FFD94D55</color>
 </resources>
