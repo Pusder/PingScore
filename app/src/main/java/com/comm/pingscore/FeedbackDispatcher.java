@@ -16,4 +16,10 @@ public final class FeedbackDispatcher {
             executor.execute(effect);
         }
     }
+
+    public void runImmediate(Runnable effect) {
+        if (effect != null) {
+            effect.run();
+        }
+    }
 }

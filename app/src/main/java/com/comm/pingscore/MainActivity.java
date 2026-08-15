@@ -2460,17 +2460,15 @@ public class MainActivity extends AppCompatActivity {
     private void playFeedback() {
         boolean playSound = soundEnabled;
         boolean vibrate = vibrationEnabled;
-        feedbackDispatcher.dispatch(() -> {
-            if (playSound) playSoundFeedback();
-            if (vibrate) playVibrationFeedback();
-        });
+        if (vibrate) feedbackDispatcher.runImmediate(this::playVibrationFeedback);
+        if (playSound) feedbackDispatcher.dispatch(this::playSoundFeedback);
     }
 
     private void playSoundFeedback() {
         ToneGenerator tone = null;
         try {
-            tone = new ToneGenerator(AudioManager.STREAM_NOTIFICATION, 75);
-            tone.startTone(ToneGenerator.TONE_PROP_BEEP, 70);
+            tone = new ToneGenerator(AudioManager.STREAM_MUSIC, 80);
+            tone.startTone(ToneGenerator.TONE_PROP_BEEP2, 70);
         } finally {
             if (tone != null) tone.release();
         }

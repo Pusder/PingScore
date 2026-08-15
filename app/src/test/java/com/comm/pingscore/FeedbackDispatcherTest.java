@@ -23,4 +23,14 @@ public class FeedbackDispatcherTest {
         queuedEffect.get().run();
         assertTrue(played.get());
     }
+
+    @Test
+    public void runImmediateExecutesEffectBeforeReturning() {
+        FeedbackDispatcher dispatcher = new FeedbackDispatcher(Runnable::run);
+        AtomicBoolean played = new AtomicBoolean(false);
+
+        dispatcher.runImmediate(() -> played.set(true));
+
+        assertTrue(played.get());
+    }
 }
