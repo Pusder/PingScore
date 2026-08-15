@@ -4,18 +4,21 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="@color/score_bg"
+    android:orientation="vertical"
+    android:paddingTop="8dp"
     android:paddingStart="16dp"
-    android:paddingEnd="16dp">
+    android:paddingEnd="16dp"
+    android:paddingBottom="12dp">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="58dp"
+        android:layout_height="52dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <ImageButton
+            android:id="@+id/history_button"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="@android:color/transparent"
@@ -34,6 +37,7 @@
             android:textStyle="bold" />
 
         <ImageButton
+            android:id="@+id/global_settings_button"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="@drawable/bg_icon_button"
@@ -44,11 +48,12 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="64dp"
+        android:layout_height="56dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <TextView
+            android:id="@+id/start_button"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_marginEnd="10dp"
@@ -61,236 +66,58 @@
             android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/match_progress"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:background="@drawable/bg_round_pill"
             android:gravity="center"
-            android:text="当前局数：1/3"
+            android:text="正规赛 · BO3 · 第 1 局 / 3 局"
             android:textColor="@color/score_ink"
-            android:textSize="18sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
     </LinearLayout>
 
-    <LinearLayout
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/set_tabs_list"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="12dp"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp" />
+
+    <TextView
+        android:id="@+id/team_queue_button"
         android:layout_width="match_parent"
         android:layout_height="44dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/bg_set_tab"
         android:gravity="center"
-        android:orientation="horizontal">
+        android:text="待赛  + 添加对局"
+        android:textColor="@color/score_ink"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
 
-        <TextView
-            android:layout_width="64dp"
-            android:layout_height="32dp"
-            android:layout_marginEnd="8dp"
-            android:background="@drawable/bg_set_selected"
-            android:gravity="center"
-            android:text="11:8"
-            android:textColor="@color/score_green_dark"
-            android:textSize="13sp"
-            android:textStyle="bold" />
+    <TextView
+        android:id="@+id/mode_info_button"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/bg_set_tab"
+        android:gravity="center"
+        android:text="规则说明"
+        android:textColor="@color/score_ink"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
 
-        <TextView
-            android:layout_width="64dp"
-            android:layout_height="32dp"
-            android:layout_marginEnd="8dp"
-            android:background="@drawable/bg_set_tab"
-            android:gravity="center"
-            android:text="9:6"
-            android:textColor="@color/score_muted"
-            android:textSize="13sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="64dp"
-            android:layout_height="32dp"
-            android:background="@drawable/bg_set_tab"
-            android:gravity="center"
-            android:text="待赛"
-            android:textColor="@color/score_muted"
-            android:textSize="13sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <LinearLayout
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/scoreboard_fragment_container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="8dp"
-        android:orientation="horizontal">
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginEnd="6dp"
-            android:layout_weight="1"
-            android:gravity="center_horizontal"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:gravity="center"
-                android:text="玩家 1"
-                android:textColor="@color/score_ink"
-                android:textSize="25sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="34dp"
-                android:background="@drawable/bg_serve_active"
-                android:gravity="center"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:text="● 当前发球"
-                android:textColor="@color/score_green_dark"
-                android:textSize="13sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_marginTop="10dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_score_card"
-                android:gravity="center"
-                android:text="11"
-                android:textColor="@color/score_black"
-                android:textSize="96sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="64dp"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/bg_plus_red"
-                android:gravity="center"
-                android:text="+1"
-                android:textColor="@android:color/white"
-                android:textSize="25sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="64dp"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_minus_button"
-                android:gravity="center"
-                android:text="-1"
-                android:textColor="@color/score_ink"
-                android:textSize="25sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginStart="6dp"
-            android:layout_weight="1"
-            android:gravity="center_horizontal"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:gravity="center"
-                android:text="玩家 2"
-                android:textColor="@color/score_ink"
-                android:textSize="25sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="34dp"
-                android:background="@drawable/bg_set_tab"
-                android:gravity="center"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:text="接发"
-                android:textColor="@color/score_muted"
-                android:textSize="13sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_marginTop="10dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_score_card"
-                android:gravity="center"
-                android:text="8"
-                android:textColor="@color/score_black"
-                android:textSize="96sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="64dp"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/bg_plus_blue"
-                android:gravity="center"
-                android:text="+1"
-                android:textColor="@android:color/white"
-                android:textSize="25sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="64dp"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_minus_button"
-                android:gravity="center"
-                android:text="-1"
-                android:textColor="@color/score_ink"
-                android:textSize="25sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="76dp"
-        android:background="@drawable/bg_bottom_bar_blue"
         android:layout_marginTop="12dp"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/settings_button"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@drawable/bg_settings_black"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center"
-            android:text="设定"
-            android:textColor="@android:color/white"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginStart="10dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_pause_red"
-            android:gravity="center"
-            android:text="暂停"
-            android:textColor="@android:color/white"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginStart="10dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_serve_green"
-            android:gravity="center"
-            android:text="换发"
-            android:textColor="@android:color/white"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-    </LinearLayout>
+        android:layout_weight="1" />
 </LinearLayout>
