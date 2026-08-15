@@ -38,6 +38,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
     private static final String PREFS = "match_state";
@@ -84,6 +86,8 @@ public class MainActivity extends AppCompatActivity {
     private String defaultMode = "regular";
     private int defaultBestOf = 3;
     private final Handler pauseHandler = new Handler(Looper.getMainLooper());
+    private final ExecutorService feedbackExecutor = Executors.newSingleThreadExecutor();
+    private final FeedbackDispatcher feedbackDispatcher = new FeedbackDispatcher(feedbackExecutor);
     private final Runnable pauseTicker = new Runnable() {
         @Override
         public void run() {
@@ -182,6 +186,13 @@ public class MainActivity extends AppCompatActivity {
         } else if (scoreboard.getView() != null) {
             onScoreboardReady(scoreboard.getView());
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        pauseHandler.removeCallbacksAndMessages(null);
+        feedbackExecutor.shutdownNow();
+        super.onDestroy();
     }
 
     private void bindViews() {
@@ -2447,20 +2458,31 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void playFeedback() {
-        if (soundEnabled) {
-            ToneGenerator tone = new ToneGenerator(AudioManager.STREAM_NOTIFICATION, 75);
+        boolean playSound = soundEnabled;
+        boolean vibrate = vibrationEnabled;
+        feedbackDispatcher.dispatch(() -> {
+            if (playSound) playSoundFeedback();
+            if (vibrate) playVibrationFeedback();
+        });
+    }
+
+    private void playSoundFeedback() {
+        ToneGenerator tone = null;
+        try {
+            tone = new ToneGenerator(AudioManager.STREAM_NOTIFICATION, 75);
             tone.startTone(ToneGenerator.TONE_PROP_BEEP, 70);
-            tone.release();
+        } finally {
+            if (tone != null) tone.release();
         }
-        if (vibrationEnabled) {
-            Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-            if (vibrator != null && vibrator.hasVibrator()) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator.vibrate(VibrationEffect.createOneShot(35, 80));
-                } else {
-                    vibrator.vibrate(35);
-                }
-            }
+    }
+
+    private void playVibrationFeedback() {
+        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        if (vibrator == null || !vibrator.hasVibrator()) return;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createOneShot(35, 80));
+        } else {
+            vibrator.vibrate(35);
         }
     }
 
