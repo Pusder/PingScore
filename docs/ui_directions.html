@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PingScore UI 视觉方向</title>
+  <style>
+    :root {
+      --ink: #17212b;
+      --muted: #6f7b87;
+      --line: #d5dee6;
+      --canvas: #edf2f5;
+      --paper: #ffffff;
+      --p1: #eb565d;
+      --p2: #2675d8;
+      --serve: #1fac71;
+      --dark: #17212b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background: var(--canvas);
+      font-family: "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
+    }
+
+    .page {
+      width: min(1440px, calc(100% - 48px));
+      margin: 0 auto;
+      padding: 42px 0 56px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 12px;
+      color: #416176;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .eyebrow::before {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--serve);
+      content: "";
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 32px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .intro {
+      max-width: 720px;
+      margin: 12px 0 34px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .directions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 24px;
+      align-items: start;
+    }
+
+    .direction {
+      min-width: 0;
+    }
+
+    .direction-head {
+      min-height: 100px;
+      padding: 0 4px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      height: 26px;
+      padding: 0 10px;
+      border-radius: 6px;
+      color: #fff;
+      background: #466074;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .direction.recommended .tag { background: var(--serve); }
+    .direction.dark .tag { background: #39495a; }
+    .direction.light .tag { background: #6c7590; }
+
+    h2 {
+      margin: 10px 0 6px;
+      font-size: 21px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .direction p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .phone {
+      position: relative;
+      overflow: hidden;
+      width: min(100%, 390px);
+      aspect-ratio: 390 / 800;
+      margin: 18px auto 0;
+      border: 8px solid #202a34;
+      border-radius: 32px;
+      background: #f4f7fa;
+      box-shadow: 0 14px 28px rgba(22, 39, 54, .16);
+    }
+
+    .phone::before {
+      position: absolute;
+      z-index: 5;
+      top: 8px;
+      left: 50%;
+      width: 104px;
+      height: 19px;
+      border-radius: 0 0 13px 13px;
+      background: #202a34;
+      transform: translateX(-50%);
+      content: "";
+    }
+
+    .statusbar {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 18px 0;
+      color: #50606d;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .screen {
+      display: flex;
+      flex-direction: column;
+      height: calc(100% - 26px);
+      padding: 18px 16px 14px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 34px 1fr 34px;
+      align-items: center;
+      min-height: 44px;
+    }
+
+    .icon-button {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      place-items: center;
+      border-radius: 8px;
+      color: currentColor;
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .screen-title {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .match-strip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      min-height: 54px;
+      margin-top: 14px;
+      padding: 0 13px;
+      border: 1px solid #d2dde6;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .match-status {
+      color: #1e734f;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .match-meta {
+      color: #526171;
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .set-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .set-tab {
+      min-height: 46px;
+      padding-top: 7px;
+      border: 1px solid #d2dde6;
+      border-radius: 8px;
+      color: #768391;
+      background: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.35;
+    }
+
+    .set-tab strong {
+      display: block;
+      color: #2b3742;
+      font-size: 15px;
+    }
+
+    .set-tab.current {
+      border-color: #2b73ca;
+      box-shadow: inset 0 0 0 1px #2b73ca;
+      color: #2b73ca;
+      background: #edf6ff;
+    }
+
+    .set-tab.current strong { color: #2b73ca; }
+
+    .players {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      flex: 1;
+      min-height: 0;
+      margin-top: 22px;
+    }
+
+    .player {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .player-head {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 56px;
+      gap: 6px;
+    }
+
+    .player-name {
+      max-width: 100%;
+      overflow: hidden;
+      font-size: 17px;
+      font-weight: 800;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .serve-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      height: 21px;
+      padding: 0 8px;
+      border-radius: 11px;
+      color: #16714b;
+      background: #e4f7ee;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .serve-chip::before {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      content: "";
+    }
+
+    .receive-chip {
+      display: inline-flex;
+      align-items: center;
+      height: 21px;
+      padding: 0 8px;
+      border: 1px solid #d4dce3;
+      border-radius: 11px;
+      color: #75818d;
+      background: #fff;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .score-panel {
+      display: grid;
+      flex: 1;
+      min-height: 160px;
+      place-items: center;
+      border: 1px solid #d3dce4;
+      border-top: 4px solid var(--player-color);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .score-number {
+      font-variant-numeric: tabular-nums;
+      font-size: 92px;
+      font-weight: 800;
+      letter-spacing: 0;
+      line-height: .9;
+    }
+
+    .score-controls {
+      display: grid;
+      grid-template-rows: 58px 42px;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .score-button {
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 8px;
+      color: #fff;
+      background: var(--player-color);
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .score-button.minus {
+      border: 1px solid #d4dde4;
+      color: #607080;
+      background: #fff;
+      font-size: 23px;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1.12fr 1fr 1fr;
+      gap: 8px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid #d7e0e7;
+    }
+
+    .tool {
+      display: grid;
+      min-height: 46px;
+      place-items: center;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .tool.settings { background: #1b2732; }
+    .tool.pause { background: #e85a60; }
+    .tool.serve { background: #1fac71; }
+
+    .design-points {
+      display: grid;
+      gap: 8px;
+      margin: 16px 4px 0;
+      padding: 0;
+      color: #52616e;
+      font-size: 13px;
+      line-height: 1.45;
+      list-style: none;
+    }
+
+    .design-points li {
+      position: relative;
+      padding-left: 16px;
+    }
+
+    .design-points li::before {
+      position: absolute;
+      top: .55em;
+      left: 0;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #8294a2;
+      content: "";
+    }
+
+    /* Direction B: remote-first, indoor venue screen. */
+    .dark .phone { border-color: #10161c; background: #121a22; }
+    .dark .phone::before { background: #10161c; }
+    .dark .statusbar { color: #a4b1bd; }
+    .dark .screen { color: #f3f7fa; }
+    .dark .icon-button { color: #e2edf6; }
+    .dark .match-strip { border-color: #2c3c4a; background: #1c2731; }
+    .dark .match-status { color: #70dba7; }
+    .dark .match-meta { color: #a6b6c4; }
+    .dark .set-tab { border-color: #2c3c4a; color: #8da0af; background: #18222c; }
+    .dark .set-tab strong { color: #d9e5ed; }
+    .dark .set-tab.current { border-color: #5b99e7; box-shadow: inset 0 0 0 1px #5b99e7; color: #71a9ee; background: #1d3650; }
+    .dark .set-tab.current strong { color: #9ec7fa; }
+    .dark .receive-chip { border-color: #364653; color: #aab9c6; background: #1c2731; }
+    .dark .score-panel { border-color: #354553; background: #18222b; }
+    .dark .score-number { color: #f7fafc; }
+    .dark .score-button.minus { border-color: #354553; color: #d2dee6; background: #1c2731; }
+    .dark .toolbar { border-color: #2c3c4a; }
+    .dark .tool.settings { background: #334757; }
+
+    /* Direction C: quieter app-like composition, less technical. */
+    .light .phone { border-color: #28303a; background: #fffdfb; }
+    .light .phone::before { background: #28303a; }
+    .light .match-strip { border: 0; background: #f0f2f7; }
+    .light .match-status { color: #4e6174; }
+    .light .match-meta { color: #69758a; }
+    .light .set-tab { border: 0; border-radius: 6px; background: #f4f3f7; }
+    .light .set-tab.current { box-shadow: none; color: #fff; background: #2e3340; }
+    .light .set-tab.current strong { color: #fff; }
+    .light .score-panel { border: 0; border-top: 0; border-radius: 14px; background: #f6f5f8; }
+    .light .player:first-child .score-panel { box-shadow: inset 0 -5px 0 var(--p1); }
+    .light .player:last-child .score-panel { box-shadow: inset 0 -5px 0 var(--p2); }
+    .light .score-number { font-size: 88px; }
+    .light .score-button { border-radius: 12px; }
+    .light .score-button.minus { border: 0; background: #f4f3f7; }
+    .light .toolbar { border: 0; }
+    .light .tool { border-radius: 12px; }
+    .light .tool.settings { background: #34323a; }
+
+    .comparison-note {
+      margin-top: 42px;
+      padding: 18px 20px;
+      border-left: 4px solid var(--serve);
+      background: #fff;
+      color: #566572;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .comparison-note strong { color: #1b2935; }
+
+    @media (max-width: 1080px) {
+      .directions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .direction:last-child { grid-column: 1 / -1; width: min(100%, 470px); justify-self: center; }
+    }
+
+    @media (max-width: 680px) {
+      .page { width: min(100% - 32px, 460px); padding-top: 28px; }
+      h1 { font-size: 26px; }
+      .directions { grid-template-columns: 1fr; gap: 38px; }
+      .direction:last-child { grid-column: auto; width: auto; }
+      .direction-head { min-height: 0; }
+      .phone { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="eyebrow">PING SCORE / UI DIRECTION</div>
+    <h1>主计分页的三种视觉方向</h1>
+    <p class="intro">同一组比赛数据、同一套按钮职责。请重点比较“第一眼看到什么”“比分是否足够突出”“三种语义色是否会互相抢戏”，而不是文案本身。</p>
+
+    <section class="directions" aria-label="视觉方向对比">
+      <article class="direction recommended">
+        <header class="direction-head">
+          <span class="tag">推荐</span>
+          <h2>A. 赛事控制台</h2>
+          <p>明亮、克制、远看清楚。比赛状态与操作分层，适合手机和横屏控制台共用。</p>
+        </header>
+        <div class="phone">
+          <div class="statusbar"><span>18:10</span><span>5G&nbsp;&nbsp;63%</span></div>
+          <div class="screen">
+            <div class="topbar"><span class="icon-button" aria-label="历史">◴</span><div class="screen-title">乒乓球计分器</div><span class="icon-button" aria-label="设置">⚙</span></div>
+            <div class="match-strip"><span class="match-status">● 比赛中</span><span class="match-meta">正规赛 · BO3<br>第 2 局 / 大比分 1:0</span></div>
+            <div class="set-tabs"><div class="set-tab">第 1 局<strong>11:9</strong></div><div class="set-tab current">第 2 局<strong>0:0</strong></div><div class="set-tab">第 3 局<strong>待赛</strong></div></div>
+            <div class="players">
+              <section class="player" style="--player-color: var(--p1)"><div class="player-head"><div class="player-name">玩家 1</div><span class="receive-chip">接发</span></div><div class="score-panel"><div class="score-number">0</div></div><div class="score-controls"><div class="score-button">+1</div><div class="score-button minus">-1</div></div></section>
+              <section class="player" style="--player-color: var(--p2)"><div class="player-head"><div class="player-name">玩家 2</div><span class="serve-chip">当前发球</span></div><div class="score-panel"><div class="score-number">0</div></div><div class="score-controls"><div class="score-button">+1</div><div class="score-button minus">-1</div></div></section>
+            </div>
+            <div class="toolbar"><div class="tool settings">设定</div><div class="tool pause">暂停</div><div class="tool serve">换发</div></div>
+          </div>
+        </div>
+        <ul class="design-points"><li>玩家色只用于识别和加分，绿色只表达发球。</li><li>分数卡用细边与色条，移除厚黑框。</li><li>8dp 统一圆角，留白优先于装饰。</li></ul>
+      </article>
+
+      <article class="direction dark">
+        <header class="direction-head">
+          <span class="tag">对比方向</span>
+          <h2>B. 场馆大屏</h2>
+          <p>暗色、高对比、比赛感最强。适合远距离观看，但日常手机使用会更重。</p>
+        </header>
+        <div class="phone">
+          <div class="statusbar"><span>18:10</span><span>5G&nbsp;&nbsp;63%</span></div>
+          <div class="screen">
+            <div class="topbar"><span class="icon-button" aria-label="历史">◴</span><div class="screen-title">乒乓球计分器</div><span class="icon-button" aria-label="设置">⚙</span></div>
+            <div class="match-strip"><span class="match-status">● 比赛中</span><span class="match-meta">正规赛 · BO3<br>第 2 局 / 大比分 1:0</span></div>
+            <div class="set-tabs"><div class="set-tab">第 1 局<strong>11:9</strong></div><div class="set-tab current">第 2 局<strong>0:0</strong></div><div class="set-tab">第 3 局<strong>待赛</strong></div></div>
+            <div class="players">
+              <section class="player" style="--player-color: var(--p1)"><div class="player-head"><div class="player-name">玩家 1</div><span class="receive-chip">接发</span></div><div class="score-panel"><div class="score-number">0</div></div><div class="score-controls"><div class="score-button">+1</div><div class="score-button minus">-1</div></div></section>
+              <section class="player" style="--player-color: var(--p2)"><div class="player-head"><div class="player-name">玩家 2</div><span class="serve-chip">当前发球</span></div><div class="score-panel"><div class="score-number">0</div></div><div class="score-controls"><div class="score-button">+1</div><div class="score-button minus">-1</div></div></section>
+            </div>
+            <div class="toolbar"><div class="tool settings">设定</div><div class="tool pause">暂停</div><div class="tool serve">换发</div></div>
+          </div>
+        </div>
+        <ul class="design-points"><li>夜间、球馆或投屏时的比分可视性最强。</li><li>黑色成为底色，适合“正在比赛”的紧张感。</li><li>设置与历史页需同步提供暗色样式。</li></ul>
+      </article>
+
+      <article class="direction light">
+        <header class="direction-head">
+          <span class="tag">对比方向</span>
+          <h2>C. 轻量运动工具</h2>
+          <p>更柔和、更像日常工具。亲和力较强，但场上识别感与专业感会弱一些。</p>
+        </header>
+        <div class="phone">
+          <div class="statusbar"><span>18:10</span><span>5G&nbsp;&nbsp;63%</span></div>
+          <div class="screen">
+            <div class="topbar"><span class="icon-button" aria-label="历史">◴</span><div class="screen-title">乒乓球计分器</div><span class="icon-button" aria-label="设置">⚙</span></div>
+            <div class="match-strip"><span class="match-status">● 比赛中</span><span class="match-meta">正规赛 · BO3<br>第 2 局 / 大比分 1:0</span></div>
+            <div class="set-tabs"><div class="set-tab">第 1 局<strong>11:9</strong></div><div class="set-tab current">第 2 局<strong>0:0</strong></div><div class="set-tab">第 3 局<strong>待赛</strong></div></div>
+            <div class="players">
+              <section class="player" style="--player-color: var(--p1)"><div class="player-head"><div class="player-name">玩家 1</div><span class="receive-chip">接发</span></div><div class="score-panel"><div class="score-number">0</div></div><div class="score-controls"><div class="score-button">+1</div><div class="score-button minus">-1</div></div></section>
+              <section class="player" style="--player-color: var(--p2)"><div class="player-head"><div class="player-name">玩家 2</div><span class="serve-chip">当前发球</span></div><div class="score-panel"><div class="score-number">0</div></div><div class="score-controls"><div class="score-button">+1</div><div class="score-button minus">-1</div></div></section>
+            </div>
+            <div class="toolbar"><div class="tool settings">设定</div><div class="tool pause">暂停</div><div class="tool serve">换发</div></div>
+          </div>
+        </div>
+        <ul class="design-points"><li>色彩更温和，适合多人日常娱乐对局。</li><li>较圆的卡片、较低的边界感，阅读更轻松。</li><li>不建议作为主线：距场识别与紧凑感不足。</li></ul>
+      </article>
+    </section>
+
+    <aside class="comparison-note"><strong>建议选择 A。</strong> 它会保留你已确定的语义：红 / 蓝代表双方、绿色代表换发、深色代表设定；同时解决当前界面里粗黑边、占满屏幕和操作色彼此竞争的问题。确定方向后，再把这套规则同步到横屏、赛制设置、暂停锁定、历史记录和比赛结束页。</aside>
+  </main>
+</body>
+</html>
