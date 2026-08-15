@@ -13,18 +13,18 @@
         android:layout_height="match_parent"
         android:background="@drawable/bg_control_rail"
         android:orientation="vertical"
-        android:padding="12dp">
+        android:padding="8dp">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="42dp"
+            android:layout_height="36dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
             <ImageButton
                 android:id="@+id/history_button"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:background="@android:color/transparent"
                 android:contentDescription="历史记录"
                 android:src="@drawable/ic_history"
@@ -42,8 +42,8 @@
 
             <ImageButton
                 android:id="@+id/global_settings_button"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:background="@drawable/bg_icon_button"
                 android:contentDescription="全局设置"
                 android:src="@drawable/ic_settings"
@@ -54,37 +54,27 @@
         <TextView
             android:id="@+id/start_button"
             android:layout_width="match_parent"
-            android:layout_height="46dp"
-            android:layout_marginTop="8dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="6dp"
             android:background="@drawable/bg_start_button"
             android:gravity="center"
             android:text="开始比赛"
             android:textColor="@android:color/white"
-            android:textSize="17sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/match_progress"
             android:layout_width="match_parent"
-            android:layout_height="58dp"
-            android:layout_marginTop="8dp"
+            android:layout_height="44dp"
+            android:layout_marginTop="6dp"
             android:background="@drawable/bg_round_pill"
             android:gravity="center"
-            android:maxLines="3"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
+            android:maxLines="2"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
             android:text="正规赛 · BO3"
             android:textColor="@color/score_ink"
-            android:textSize="13sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="26dp"
-            android:layout_marginTop="8dp"
-            android:gravity="center_vertical"
-            android:text="小局"
-            android:textColor="@color/score_muted"
             android:textSize="12sp"
             android:textStyle="bold" />
 
@@ -95,15 +85,15 @@
             android:layout_weight="1"
             android:clipToPadding="false"
             android:overScrollMode="ifContentScrolls"
-            android:paddingBottom="8dp"
+            android:paddingBottom="4dp"
             android:scrollbarStyle="insideOverlay"
             android:scrollbars="vertical" />
 
         <TextView
             android:id="@+id/team_queue_button"
             android:layout_width="match_parent"
-            android:layout_height="36dp"
-            android:layout_marginBottom="8dp"
+            android:layout_height="32dp"
+            android:layout_marginBottom="6dp"
             android:background="@drawable/bg_set_tab"
             android:gravity="center"
             android:text="待赛  + 添加对局"
@@ -115,8 +105,8 @@
         <TextView
             android:id="@+id/mode_info_button"
             android:layout_width="match_parent"
-            android:layout_height="36dp"
-            android:layout_marginBottom="8dp"
+            android:layout_height="32dp"
+            android:layout_marginBottom="6dp"
             android:background="@drawable/bg_set_tab"
             android:gravity="center"
             android:text="规则说明"
@@ -128,43 +118,42 @@
         <LinearLayout
             android:id="@+id/land_action_panel"
             android:layout_width="match_parent"
-            android:layout_height="148dp"
-            android:background="@android:color/transparent"
+            android:layout_height="132dp"
             android:orientation="vertical">
 
             <TextView
                 android:id="@+id/land_settings_button"
                 android:layout_width="match_parent"
-                android:layout_height="44dp"
+                android:layout_height="40dp"
                 android:background="@drawable/bg_settings_black"
                 android:gravity="center"
                 android:text="设定"
                 android:textColor="@android:color/white"
-                android:textSize="15sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/land_pause_button"
                 android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="8dp"
+                android:layout_height="40dp"
+                android:layout_marginTop="6dp"
                 android:background="@drawable/bg_pause_red"
                 android:gravity="center"
                 android:text="暂停"
                 android:textColor="@android:color/white"
-                android:textSize="15sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/land_serve_button"
                 android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="8dp"
+                android:layout_height="40dp"
+                android:layout_marginTop="6dp"
                 android:background="@drawable/bg_serve_green"
                 android:gravity="center"
                 android:text="换发"
                 android:textColor="@android:color/white"
-                android:textSize="15sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
     </LinearLayout>

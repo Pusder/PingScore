@@ -12,8 +12,6 @@ import android.os.Vibrator;
 import android.text.InputType;
 import android.view.View;
 import android.view.Gravity;
-import android.view.Window;
-import android.widget.Button;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -24,8 +22,6 @@ import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.graphics.drawable.ColorDrawable;
-import android.widget.ListView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
@@ -594,10 +590,18 @@ public class MainActivity extends AppCompatActivity {
         action.setTextSize(14);
         action.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
         action.setPadding(dp(12), 0, dp(12), 0);
+        action.setMinHeight(dp(44));
         action.setBackgroundResource(R.drawable.bg_set_current);
         action.setClickable(true);
         action.setFocusable(true);
         return action;
+    }
+
+    private LinearLayout.LayoutParams dialogFormParams(int heightDp, int topMarginDp) {
+        int height = heightDp < 0 ? heightDp : dp(heightDp);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, height);
+        params.topMargin = dp(topMarginDp);
+        return params;
     }
 
     private LinearLayout createEditorSection(String title) {
@@ -762,20 +766,25 @@ public class MainActivity extends AppCompatActivity {
         Spinner boSpinner = new Spinner(this);
         Spinner scoreSpinner = new Spinner(this);
         Spinner serveSpinner = new Spinner(this);
-        content.addView(boSpinner, new LinearLayout.LayoutParams(-1, dp(48)));
-        content.addView(scoreSpinner, new LinearLayout.LayoutParams(-1, dp(48)));
-        content.addView(serveSpinner, new LinearLayout.LayoutParams(-1, dp(48)));
+        MatchUiStyler.styleSpinner(boSpinner);
+        MatchUiStyler.styleSpinner(scoreSpinner);
+        MatchUiStyler.styleSpinner(serveSpinner);
+        content.addView(boSpinner, dialogFormParams(48, 8));
+        content.addView(scoreSpinner, dialogFormParams(48, 8));
+        content.addView(serveSpinner, dialogFormParams(48, 8));
 
         EditText one = new EditText(this);
         one.setHint("玩家 1 名称");
         one.setSingleLine(true);
         one.setText(playerOne.equals("玩家 1") ? "" : playerOne);
-        content.addView(one, new LinearLayout.LayoutParams(-1, dp(52)));
+        MatchUiStyler.styleInput(one);
+        content.addView(one, dialogFormParams(52, 8));
         EditText two = new EditText(this);
         two.setHint("玩家 2 名称");
         two.setSingleLine(true);
         two.setText(playerTwo.equals("玩家 2") ? "" : playerTwo);
-        content.addView(two, new LinearLayout.LayoutParams(-1, dp(52)));
+        MatchUiStyler.styleInput(two);
+        content.addView(two, dialogFormParams(52, 8));
 
         LinearLayout wheelSection = createEditorSection("车轮赛选手");
         LinearLayout wheelList = new LinearLayout(this);
@@ -794,7 +803,7 @@ public class MainActivity extends AppCompatActivity {
         addWheelPlayer.setOnClickListener(v -> addEditableNameRow(wheelList,
                 wheelInputs, "", "选手姓名"));
         wheelSection.addView(addWheelPlayer, new LinearLayout.LayoutParams(-1, dp(44)));
-        content.addView(wheelSection, new LinearLayout.LayoutParams(-1, -2));
+        content.addView(wheelSection, dialogFormParams(-2, 12));
 
         LinearLayout doublesSection = createEditorSection("双打队伍与队员");
         List<TeamEditor> doubleEditors = new ArrayList<>();
@@ -804,7 +813,7 @@ public class MainActivity extends AppCompatActivity {
                 teamTwo.equals("队伍 2") ? "B 队" : teamTwo, doubleTwoMembers);
         doubleEditors.add(doubleOneEditor);
         doubleEditors.add(doubleTwoEditor);
-        content.addView(doublesSection, new LinearLayout.LayoutParams(-1, -2));
+        content.addView(doublesSection, dialogFormParams(-2, 12));
 
         LinearLayout teamSection = createEditorSection("团队赛队伍与队员");
         LinearLayout teamList = new LinearLayout(this);
@@ -836,7 +845,7 @@ public class MainActivity extends AppCompatActivity {
                 new String[]{"先胜 1 场", "先胜 2 场", "先胜 3 场"},
                 "先胜 " + teamTargetWins + " 场");
         teamSection.addView(teamTargetSpinner, new LinearLayout.LayoutParams(-1, dp(48)));
-        content.addView(teamSection, new LinearLayout.LayoutParams(-1, -2));
+        content.addView(teamSection, dialogFormParams(-2, 12));
 
         setBoOptions(boSpinner, selectedSetupMode(), preferredSetupBestOf());
         setSpinnerValues(scoreSpinner, new String[]{"11 分", "21 分"},
@@ -856,6 +865,7 @@ public class MainActivity extends AppCompatActivity {
         modeGroup.check(selectedButton.getId());
 
         ScrollView setupScroll = new ScrollView(this);
+        setupScroll.setFillViewport(true);
         setupScroll.addView(content);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("本场设定")
@@ -1278,12 +1288,14 @@ public class MainActivity extends AppCompatActivity {
         RadioButton button = new RadioButton(this);
         button.setText(text);
         button.setId(View.generateViewId());
+        MatchUiStyler.styleModeChoice(button);
         return button;
     }
 
     private void setSpinnerValues(Spinner spinner, String[] values, String selected) {
         spinner.setAdapter(new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_dropdown_item, values));
+        MatchUiStyler.styleSpinner(spinner);
         for (int i = 0; i < values.length; i++) {
             if (values[i].equals(selected)) {
                 spinner.setSelection(i);
@@ -1425,8 +1437,10 @@ public class MainActivity extends AppCompatActivity {
                 android.R.layout.simple_spinner_dropdown_item, oneMembers));
         twoSpinner.setAdapter(new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_dropdown_item, twoMembers));
-        content.addView(oneSpinner);
-        content.addView(twoSpinner);
+        MatchUiStyler.styleSpinner(oneSpinner);
+        MatchUiStyler.styleSpinner(twoSpinner);
+        content.addView(oneSpinner, dialogFormParams(48, 0));
+        content.addView(twoSpinner, dialogFormParams(48, 8));
         String action = engine != null && engine.isStarted() && !engine.isFinished()
                 ? "加入待赛" : "添加并开始";
         AlertDialog dialog = new AlertDialog.Builder(this)
@@ -1476,8 +1490,10 @@ public class MainActivity extends AppCompatActivity {
         leftSpinner.setAdapter(adapter);
         rightSpinner.setAdapter(adapter);
         if (rightSpinner.getCount() > 1) rightSpinner.setSelection(1);
-        content.addView(leftSpinner);
-        content.addView(rightSpinner);
+        MatchUiStyler.styleSpinner(leftSpinner);
+        MatchUiStyler.styleSpinner(rightSpinner);
+        content.addView(leftSpinner, dialogFormParams(48, 0));
+        content.addView(rightSpinner, dialogFormParams(48, 8));
         String action = engine != null && engine.isStarted() && !engine.isFinished()
                 ? "加入待赛" : "添加并开始";
         AlertDialog dialog = new AlertDialog.Builder(this)
@@ -1615,18 +1631,70 @@ public class MainActivity extends AppCompatActivity {
             showDoublesServeChooser();
             return;
         }
-        String[] choices = {playerOne + "（当前 " + engine.getCurrentOne() + " 分）",
-                playerTwo + "（当前 " + engine.getCurrentTwo() + " 分）"};
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(18), dp(8), dp(18), dp(8));
+        TextView description = new TextView(this);
+        description.setText("点击一方卡片后立即设为当前发球方，比分不会变化。");
+        description.setTextColor(getColor(R.color.score_muted));
+        description.setTextSize(14);
+        description.setLineSpacing(dp(3), 1f);
+        content.addView(description, new LinearLayout.LayoutParams(-1, -2));
+        LinearLayout oneCard = createServePlayerCard(0);
+        LinearLayout twoCard = createServePlayerCard(1);
+        content.addView(oneCard, dialogFormParams(-2, 10));
+        content.addView(twoCard, dialogFormParams(-2, 8));
+        AlertDialog[] holder = new AlertDialog[1];
+        View.OnClickListener chooseServer = v -> {
+            engine.setCurrentServer((Integer) v.getTag());
+            persist();
+            holder[0].dismiss();
+            render();
+        };
+        oneCard.setOnClickListener(chooseServer);
+        twoCard.setOnClickListener(chooseServer);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("选择发球方")
-                .setItems(choices, (ignored, which) -> {
-                    engine.setCurrentServer(which);
-                    persist();
-                    render();
-                })
+                .setView(content)
                 .setNegativeButton("取消", null)
                 .create();
+        holder[0] = dialog;
         showStyledDialog(dialog);
+    }
+
+    private LinearLayout createServePlayerCard(int player) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(16), dp(12), dp(16), dp(12));
+        card.setTag(player);
+        card.setClickable(true);
+        card.setFocusable(true);
+        card.setBackgroundResource(player == 0
+                ? R.drawable.bg_score_card_red : R.drawable.bg_score_card_blue);
+
+        TextView name = new TextView(this);
+        name.setText(player == 0 ? playerOne : playerTwo);
+        name.setTextColor(getColor(R.color.score_ink));
+        name.setTextSize(18);
+        name.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
+        card.addView(name, new LinearLayout.LayoutParams(-1, dp(30)));
+
+        TextView score = new TextView(this);
+        score.setText("本局比分  " + (player == 0 ? engine.getCurrentOne() : engine.getCurrentTwo())
+                + " 分");
+        score.setTextColor(getColor(R.color.score_muted));
+        score.setTextSize(14);
+        card.addView(score, new LinearLayout.LayoutParams(-1, dp(26)));
+
+        TextView action = new TextView(this);
+        boolean isServing = engine.getCurrentServer() == player;
+        action.setText(isServing ? "● 当前发球方" : "设为当前发球方");
+        action.setTextColor(getColor(isServing ? R.color.score_green
+                : player == 0 ? R.color.score_red : R.color.score_blue));
+        action.setTextSize(14);
+        action.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
+        card.addView(action, new LinearLayout.LayoutParams(-1, dp(28)));
+        return card;
     }
 
     private void showDoublesServeChooser() {
@@ -1664,7 +1732,8 @@ public class MainActivity extends AppCompatActivity {
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(dp(16), dp(12), dp(16), dp(12));
         card.setBackgroundResource(engine.isPauseUsed(player)
-                ? R.drawable.bg_set_tab : R.drawable.bg_set_current);
+                ? R.drawable.bg_set_tab
+                : player == 0 ? R.drawable.bg_score_card_red : R.drawable.bg_score_card_blue);
         card.setTag(player);
         TextView name = new TextView(this);
         name.setText(player == 0 ? playerOne : playerTwo);
@@ -1681,7 +1750,7 @@ public class MainActivity extends AppCompatActivity {
         TextView pause = new TextView(this);
         pause.setText(engine.isPauseUsed(player) ? "● 本场暂停已用" : "○ 本场暂停可用");
         pause.setTextColor(getColor(engine.isPauseUsed(player)
-                ? R.color.score_muted : R.color.score_blue));
+                ? R.color.score_muted : player == 0 ? R.color.score_red : R.color.score_blue));
         pause.setTextSize(14);
         card.addView(pause, new LinearLayout.LayoutParams(-1, dp(28)));
         card.setAlpha(engine.isPauseUsed(player) ? 0.58f : 1f);
@@ -1702,12 +1771,14 @@ public class MainActivity extends AppCompatActivity {
     private void showPauseLockedDialog() {
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(20), dp(8), dp(20), dp(8));
+        content.setPadding(dp(18), dp(8), dp(18), dp(8));
         TextView description = new TextView(this);
         description.setText("计分、换发和本场设定已锁定。倒计时结束后比赛会自动恢复。");
         description.setTextColor(getColor(R.color.score_muted));
         description.setTextSize(15);
         description.setLineSpacing(dp(3), 1f);
+        description.setPadding(dp(12), dp(10), dp(12), dp(10));
+        description.setBackgroundResource(R.drawable.bg_dialog_section);
         content.addView(description, new LinearLayout.LayoutParams(-1, -2));
         TextView timer = new TextView(this);
         timer.setGravity(Gravity.CENTER);
@@ -1715,13 +1786,14 @@ public class MainActivity extends AppCompatActivity {
         timer.setTextSize(38);
         timer.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
         timer.setBackgroundResource(R.drawable.bg_pause_timer);
-        content.addView(timer, new LinearLayout.LayoutParams(-1, dp(82)));
+        content.addView(timer, dialogFormParams(82, 12));
         TextView owner = new TextView(this);
         owner.setGravity(Gravity.CENTER);
         owner.setText("暂停方：" + pauseOwnerName());
         owner.setTextColor(getColor(R.color.score_ink));
         owner.setTextSize(15);
-        content.addView(owner, new LinearLayout.LayoutParams(-1, dp(40)));
+        owner.setBackgroundResource(R.drawable.bg_input_item);
+        content.addView(owner, dialogFormParams(40, 8));
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("暂停锁定")
@@ -1890,20 +1962,36 @@ public class MainActivity extends AppCompatActivity {
 
         LinearLayout resultContent = new LinearLayout(this);
         resultContent.setOrientation(LinearLayout.VERTICAL);
-        resultContent.setPadding(dp(20), dp(8), dp(20), dp(8));
-        TextView overall = new TextView(this);
-        overall.setText("最终大比分  " + engine.getWinsOne() + ":" + engine.getWinsTwo()
-                + "\n获胜方：" + winner);
-        overall.setTextColor(getColor(R.color.score_red));
-        overall.setTextSize(20);
-        overall.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
-        resultContent.addView(overall);
+        resultContent.setPadding(dp(18), dp(8), dp(18), dp(8));
+        TextView winnerView = new TextView(this);
+        winnerView.setText("获胜方  " + winner);
+        winnerView.setTextColor(getColor(R.color.score_red));
+        winnerView.setTextSize(20);
+        winnerView.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
+        resultContent.addView(winnerView);
+        LinearLayout overall = new LinearLayout(this);
+        overall.setGravity(Gravity.CENTER_VERTICAL);
+        overall.setPadding(dp(12), dp(10), dp(12), dp(10));
+        overall.setBackgroundResource(R.drawable.bg_dialog_section);
+        overall.addView(createResultScore(playerOne, engine.getWinsOne(),
+                winnerIndex == 0 ? R.color.score_red : R.color.score_muted),
+                new LinearLayout.LayoutParams(0, dp(54), 1));
+        TextView divider = new TextView(this);
+        divider.setText(":");
+        divider.setGravity(Gravity.CENTER);
+        divider.setTextColor(getColor(R.color.score_muted));
+        divider.setTextSize(22);
+        overall.addView(divider, new LinearLayout.LayoutParams(dp(30), dp(54)));
+        overall.addView(createResultScore(playerTwo, engine.getWinsTwo(),
+                winnerIndex == 1 ? R.color.score_red : R.color.score_muted),
+                new LinearLayout.LayoutParams(0, dp(54), 1));
+        resultContent.addView(overall, dialogFormParams(74, 8));
         TextView loserView = new TextView(this);
         loserView.setText("落败方：" + loser);
         loserView.setTextColor(getColor(R.color.score_muted));
         loserView.setTextSize(15);
-        loserView.setPadding(0, dp(4), 0, dp(10));
-        resultContent.addView(loserView);
+        loserView.setPadding(0, dp(8), 0, dp(8));
+        resultContent.addView(loserView, new LinearLayout.LayoutParams(-1, -2));
         TextView label = new TextView(this);
         label.setText("小局记录");
         label.setTextColor(getColor(R.color.score_ink));
@@ -1913,17 +2001,22 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < engine.getGameRecords().size(); i++) {
             MatchEngine.GameRecord record = engine.getGameRecords().get(i);
             TextView row = new TextView(this);
-            row.setText("第 " + (i + 1) + " 局  " + record.playerOne + ":" + record.playerTwo
-                    + "  ·  " + (record.winner == 0 ? playerOne : playerTwo) + "胜");
+            row.setText(MatchUiStyler.resultLabel(i + 1, record.playerOne, record.playerTwo,
+                    record.winner == 0 ? playerOne : playerTwo));
             row.setTextColor(getColor(record.winner == winnerIndex
                     ? R.color.score_red : R.color.score_muted));
             row.setTextSize(15);
-            row.setPadding(0, dp(5), 0, dp(5));
-            resultContent.addView(row);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setPadding(dp(12), 0, dp(12), 0);
+            row.setBackgroundResource(R.drawable.bg_input_item);
+            resultContent.addView(row, dialogFormParams(44, 6));
         }
+        ScrollView resultScroll = new ScrollView(this);
+        resultScroll.setFillViewport(true);
+        resultScroll.addView(resultContent);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("比赛结束")
-                .setView(resultContent)
+                .setView(resultScroll)
                 .setNegativeButton("完成", (d, w) -> clearActive())
                 .setPositiveButton(mode.equals("wheel") ? "下一场 PK" : "再来一场", null)
                 .create();
@@ -1934,6 +2027,17 @@ public class MainActivity extends AppCompatActivity {
             else showModernMatchSetup();
         }));
         showStyledDialog(dialog);
+    }
+
+    private TextView createResultScore(String player, int score, int colorResource) {
+        TextView scoreView = new TextView(this);
+        scoreView.setText(player + "\n" + score);
+        scoreView.setGravity(Gravity.CENTER);
+        scoreView.setTextColor(getColor(colorResource));
+        scoreView.setTextSize(16);
+        scoreView.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
+        scoreView.setMaxLines(2);
+        return scoreView;
     }
 
     private void showHistory() {
@@ -1948,44 +2052,223 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         String[] entries = history.split("\\n\\n");
-        String[] summaries = new String[entries.length];
-        for (int i = 0; i < entries.length; i++) {
-            String[] lines = entries[i].split("\\r?\\n", 2);
-            summaries[i] = lines[0];
+        ScrollView scroll = new ScrollView(this);
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(18), dp(4), dp(18), dp(12));
+        for (int i = entries.length - 1; i >= 0; i--) {
+            LinearLayout card = createHistoryCard(entries[i]);
+            LinearLayout.LayoutParams params = dialogFormParams(-2,
+                    i == entries.length - 1 ? 0 : 8);
+            content.addView(card, params);
         }
+        scroll.addView(content);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("全部比赛记录")
-                .setItems(summaries, (ignored, which) -> showHistoryDetail(entries[which]))
+                .setView(scroll)
                 .setNegativeButton("关闭", null)
                 .create();
         showStyledDialog(dialog);
     }
 
+    private LinearLayout createHistoryCard(String entry) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(14), dp(12), dp(14), dp(12));
+        card.setBackgroundResource(R.drawable.bg_input_item);
+        card.setClickable(true);
+        card.setFocusable(true);
+        card.setOnClickListener(v -> showHistoryDetail(entry));
+
+        TextView title = new TextView(this);
+        title.setText(historySummary(entry).replaceFirst("^\\[[^]]+\\]\\s*", ""));
+        title.setTextColor(getColor(R.color.score_ink));
+        title.setTextSize(16);
+        title.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
+        title.setMaxLines(2);
+        card.addView(title, new LinearLayout.LayoutParams(-1, -2));
+
+        TextView subtitle = new TextView(this);
+        subtitle.setText(MatchUiStyler.historySubtitle(historyMode(entry),
+                historyBestOf(entry), historySetCount(entry)));
+        subtitle.setTextColor(getColor(R.color.score_muted));
+        subtitle.setTextSize(13);
+        subtitle.setPadding(0, dp(6), 0, 0);
+        card.addView(subtitle, new LinearLayout.LayoutParams(-1, -2));
+
+        TextView cue = new TextView(this);
+        cue.setText("查看详情");
+        cue.setTextColor(getColor(R.color.score_blue));
+        cue.setTextSize(13);
+        cue.setPadding(0, dp(8), 0, 0);
+        card.addView(cue, new LinearLayout.LayoutParams(-1, -2));
+        return card;
+    }
+
     private void showHistoryDetail(String entry) {
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(18), dp(6), dp(18), dp(12));
+
+        TextView summary = new TextView(this);
+        summary.setText(historySummary(entry).replaceFirst("^\\[[^]]+\\]\\s*", ""));
+        summary.setTextColor(getColor(R.color.score_ink));
+        summary.setTextSize(17);
+        summary.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
+        content.addView(summary, new LinearLayout.LayoutParams(-1, -2));
+
+        TextView subtitle = new TextView(this);
+        subtitle.setText(MatchUiStyler.historySubtitle(historyMode(entry),
+                historyBestOf(entry), historySetCount(entry)));
+        subtitle.setTextColor(getColor(R.color.score_muted));
+        subtitle.setTextSize(13);
+        subtitle.setPadding(0, dp(6), 0, dp(2));
+        content.addView(subtitle, new LinearLayout.LayoutParams(-1, -2));
+
+        String overallWinner = historyWinner(entry);
+        boolean hasSetRows = false;
+        for (String line : entry.split("\\r?\\n")) {
+            HistorySet historySet = parseHistorySet(line);
+            if (historySet == null) continue;
+            hasSetRows = true;
+            TextView row = new TextView(this);
+            row.setText(MatchUiStyler.resultLabel(historySet.number, historySet.playerOne,
+                    historySet.playerTwo, historySet.winner));
+            row.setTextColor(getColor(historySet.winner.equals(overallWinner)
+                    ? R.color.score_red : R.color.score_blue));
+            row.setTextSize(15);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setPadding(dp(12), 0, dp(12), 0);
+            row.setBackgroundResource(R.drawable.bg_input_item);
+            content.addView(row, dialogFormParams(48, 8));
+        }
+
+        if (!hasSetRows) {
+            String details = entry.substring(Math.min(historySummary(entry).length(), entry.length())).trim();
+            TextView record = new TextView(this);
+            record.setText(details.isEmpty() ? "此对局没有可展开的小局记录。" : details);
+            record.setTextColor(getColor(R.color.score_muted));
+            record.setTextSize(15);
+            record.setLineSpacing(dp(3), 1f);
+            record.setPadding(dp(12), dp(10), dp(12), dp(10));
+            record.setBackgroundResource(R.drawable.bg_dialog_section);
+            content.addView(record, dialogFormParams(-2, 8));
+        }
+
+        ScrollView detailScroll = new ScrollView(this);
+        detailScroll.setFillViewport(true);
+        detailScroll.addView(content);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("比赛详情")
-                .setMessage(entry)
+                .setView(detailScroll)
                 .setPositiveButton("关闭", null)
                 .create();
         showStyledDialog(dialog);
+    }
+
+    private String historySummary(String entry) {
+        String[] lines = entry.split("\\r?\\n", 2);
+        return lines.length == 0 ? "比赛记录" : lines[0];
+    }
+
+    private String historyMode(String entry) {
+        String summary = historySummary(entry);
+        if (summary.startsWith("[")) {
+            int closing = summary.indexOf(']');
+            if (closing > 1) return summary.substring(1, closing);
+        }
+        return "比赛";
+    }
+
+    private int historyBestOf(String entry) {
+        String summary = historySummary(entry);
+        int start = summary.indexOf("BO");
+        if (start < 0) return 0;
+        int end = start + 2;
+        while (end < summary.length() && Character.isDigit(summary.charAt(end))) end++;
+        return parseHistoryInt(summary.substring(start + 2, end));
+    }
+
+    private int historySetCount(String entry) {
+        int count = 0;
+        for (String line : entry.split("\\r?\\n")) {
+            if (parseHistorySet(line) != null) count++;
+        }
+        return count;
+    }
+
+    private String historyWinner(String entry) {
+        String summary = historySummary(entry);
+        int index = summary.indexOf("获胜：");
+        return index < 0 ? "" : summary.substring(index + "获胜：".length()).trim();
+    }
+
+    private HistorySet parseHistorySet(String line) {
+        if (!line.startsWith("第 ") || !line.contains("局")) return null;
+        int colon = line.indexOf('：');
+        if (colon < 0) return null;
+        String[] scoreAndWinner = line.substring(colon + 1).split(" · ", 2);
+        String[] score = scoreAndWinner[0].trim().split(":", 2);
+        if (score.length != 2) return null;
+        int number = parseHistoryInt(line.substring(0, colon));
+        int playerOneScore = parseHistoryInt(score[0]);
+        int playerTwoScore = parseHistoryInt(score[1]);
+        if (number <= 0 || playerOneScore < 0 || playerTwoScore < 0) return null;
+        String winner = scoreAndWinner.length < 2 ? "" : scoreAndWinner[1].trim();
+        if (winner.endsWith("胜")) winner = winner.substring(0, winner.length() - 1).trim();
+        return new HistorySet(number, playerOneScore, playerTwoScore, winner);
+    }
+
+    private int parseHistoryInt(String value) {
+        String digits = value.replaceAll("[^0-9]", "");
+        if (digits.isEmpty()) return -1;
+        try {
+            return Integer.parseInt(digits);
+        } catch (NumberFormatException ignored) {
+            return -1;
+        }
+    }
+
+    private static final class HistorySet {
+        final int number;
+        final int playerOne;
+        final int playerTwo;
+        final String winner;
+
+        HistorySet(int number, int playerOne, int playerTwo, String winner) {
+            this.number = number;
+            this.playerOne = playerOne;
+            this.playerTwo = playerTwo;
+            this.winner = winner;
+        }
     }
 
     private void showScoreAdjustDialog() {
         if (engine == null || selectedGameIndex >= engine.getGameRecords().size()) return;
         MatchEngine.GameRecord record = engine.getGameRecords().get(selectedGameIndex);
         LinearLayout content = new LinearLayout(this);
-        content.setOrientation(LinearLayout.HORIZONTAL);
-        content.setPadding(dp(20), dp(8), dp(20), 0);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(18), dp(8), dp(18), 0);
+        TextView hint = new TextView(this);
+        hint.setText("最终小局比分");
+        hint.setTextColor(getColor(R.color.score_muted));
+        hint.setTextSize(13);
+        content.addView(hint, new LinearLayout.LayoutParams(-1, dp(24)));
+        LinearLayout scoreRow = new LinearLayout(this);
+        scoreRow.setOrientation(LinearLayout.HORIZONTAL);
         EditText one = new EditText(this);
         one.setInputType(InputType.TYPE_CLASS_NUMBER);
-        one.setHint("玩家 1");
         one.setText(String.valueOf(record.playerOne));
         EditText two = new EditText(this);
         two.setInputType(InputType.TYPE_CLASS_NUMBER);
-        two.setHint("玩家 2");
         two.setText(String.valueOf(record.playerTwo));
-        content.addView(one, new LinearLayout.LayoutParams(0, dp(56), 1));
-        content.addView(two, new LinearLayout.LayoutParams(0, dp(56), 1));
+        LinearLayout oneCard = createScoreEditCard(playerOne, one);
+        LinearLayout twoCard = createScoreEditCard(playerTwo, two);
+        LinearLayout.LayoutParams oneParams = new LinearLayout.LayoutParams(0, dp(84), 1);
+        oneParams.rightMargin = dp(8);
+        scoreRow.addView(oneCard, oneParams);
+        scoreRow.addView(twoCard, new LinearLayout.LayoutParams(0, dp(84), 1));
+        content.addView(scoreRow, new LinearLayout.LayoutParams(-1, dp(84)));
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("调整第 " + (selectedGameIndex + 1) + " 局赛果")
                 .setMessage("请输入达到胜负条件的最终小局比分")
@@ -2008,6 +2291,26 @@ public class MainActivity extends AppCompatActivity {
         showStyledDialog(dialog);
     }
 
+    private LinearLayout createScoreEditCard(String label, EditText input) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(12), dp(8), dp(12), dp(4));
+        card.setBackgroundResource(R.drawable.bg_input_item);
+        TextView title = new TextView(this);
+        title.setText(label);
+        title.setTextColor(getColor(R.color.score_muted));
+        title.setTextSize(13);
+        card.addView(title, new LinearLayout.LayoutParams(-1, dp(22)));
+        input.setGravity(Gravity.CENTER);
+        input.setTextColor(getColor(R.color.score_ink));
+        input.setTextSize(24);
+        input.setSingleLine(true);
+        input.setBackground(null);
+        input.setPadding(0, 0, 0, 0);
+        card.addView(input, new LinearLayout.LayoutParams(-1, dp(44)));
+        return card;
+    }
+
     private void showGlobalSettings() {
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
@@ -2015,31 +2318,32 @@ public class MainActivity extends AppCompatActivity {
         CheckBox undo = new CheckBox(this);
         undo.setText("加减分后显示撤销提示");
         undo.setChecked(undoPrompt);
-        content.addView(undo);
+        MatchUiStyler.styleToggle(undo);
+        content.addView(undo, dialogFormParams(48, 0));
         CheckBox sound = new CheckBox(this);
         sound.setText("开启声音反馈");
         sound.setChecked(soundEnabled);
-        content.addView(sound);
+        MatchUiStyler.styleToggle(sound);
+        content.addView(sound, dialogFormParams(48, 8));
         CheckBox vibration = new CheckBox(this);
         vibration.setText("开启震动反馈");
         vibration.setChecked(vibrationEnabled);
-        content.addView(vibration);
+        MatchUiStyler.styleToggle(vibration);
+        content.addView(vibration, dialogFormParams(48, 8));
         TextView defaultLabel = new TextView(this);
         defaultLabel.setText("默认进入方式");
         defaultLabel.setTextColor(getColor(R.color.score_muted));
         defaultLabel.setTextSize(13);
-        defaultLabel.setPadding(0, dp(8), 0, 0);
-        content.addView(defaultLabel);
+        content.addView(defaultLabel, dialogFormParams(28, 12));
         Spinner defaultSpinner = new Spinner(this);
         String[] modes = {"正规赛", "娱乐赛", "车轮赛", "双打", "团队赛"};
         setSpinnerValues(defaultSpinner, modes, modeDisplayName(defaultMode));
-        content.addView(defaultSpinner);
+        content.addView(defaultSpinner, dialogFormParams(48, 0));
         TextView presetLabel = new TextView(this);
         presetLabel.setText("已保存个人配置");
         presetLabel.setTextColor(getColor(R.color.score_muted));
         presetLabel.setTextSize(13);
-        presetLabel.setPadding(0, dp(8), 0, 0);
-        content.addView(presetLabel);
+        content.addView(presetLabel, dialogFormParams(28, 12));
         Spinner presetSpinner = new Spinner(this);
         List<String> presets = savedPresetNames();
         List<String> presetOptions = new ArrayList<>();
@@ -2047,16 +2351,16 @@ public class MainActivity extends AppCompatActivity {
         presetOptions.addAll(presets);
         setSpinnerValues(presetSpinner, presetOptions.toArray(new String[0]),
                 prefs.getString("last_preset", ""));
-        content.addView(presetSpinner);
+        content.addView(presetSpinner, dialogFormParams(48, 0));
         EditText presetName = new EditText(this);
         presetName.setHint("保存个人配置名称（可选）");
-        content.addView(presetName);
+        MatchUiStyler.styleInput(presetName);
+        content.addView(presetName, dialogFormParams(52, 8));
         TextView presetHint = new TextView(this);
         presetHint.setText("保存后可在本场设定中继续使用当前参数；声音、震动和撤销提示为全局设置。");
         presetHint.setTextColor(getColor(R.color.score_muted));
         presetHint.setTextSize(13);
-        presetHint.setPadding(0, dp(4), 0, 0);
-        content.addView(presetHint);
+        content.addView(presetHint, dialogFormParams(-2, 8));
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("全局设置")
                 .setView(content)
@@ -2162,42 +2466,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void showStyledDialog(AlertDialog dialog) {
         dialog.show();
-        Window window = dialog.getWindow();
-        if (window != null) {
-            window.setBackgroundDrawableResource(R.drawable.bg_dialog);
-            window.setDimAmount(0.38f);
-            window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-            int width = Math.min(getResources().getDisplayMetrics().widthPixels - dp(32), dp(440));
-            window.setLayout(width, android.view.WindowManager.LayoutParams.WRAP_CONTENT);
-        }
-        int titleId = getResources().getIdentifier("alertTitle", "id", "android");
-        TextView title = titleId == 0 ? null : dialog.findViewById(titleId);
-        if (title != null) {
-            title.setTextColor(getColor(R.color.score_ink));
-            title.setTextSize(20);
-        }
-        TextView message = dialog.findViewById(android.R.id.message);
-        if (message != null) {
-            message.setTextColor(getColor(R.color.score_muted));
-            message.setTextSize(15);
-            message.setLineSpacing(dp(3), 1.0f);
-        }
-        styleDialogButton(dialog.getButton(AlertDialog.BUTTON_POSITIVE), R.color.score_blue);
-        styleDialogButton(dialog.getButton(AlertDialog.BUTTON_NEGATIVE), R.color.score_muted);
-        styleDialogButton(dialog.getButton(AlertDialog.BUTTON_NEUTRAL), R.color.score_muted);
-        ListView list = dialog.getListView();
-        if (list != null) {
-            list.setDivider(new ColorDrawable(0xFFE6EDF2));
-            list.setDividerHeight(1);
-            list.setPadding(dp(8), dp(6), dp(8), dp(6));
-        }
-    }
-
-    private void styleDialogButton(Button button, int colorResource) {
-        if (button == null) return;
-        button.setAllCaps(false);
-        button.setTextColor(getColor(colorResource));
-        button.setTextSize(15);
+        MatchUiStyler.styleDialog(dialog, this, 32);
     }
 
     private void persist() {
